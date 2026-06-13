@@ -14,24 +14,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "Kaixin - Innovation That Brings Happiness",
+  description:
+    "Kaixin is a modern technology startup founded by Yovi Widianto, dedicated to creating innovative solutions that bring joy and simplicity to people's lives through cutting-edge technology.",
+  keywords: [
+    "Kaixin",
+    "startup",
+    "technology",
+    "innovation",
+    "Yovi Widianto",
+    "digital solutions",
+    "software development",
+  ],
+  authors: [{ name: "Yovi Widianto" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo-kaixin.png",
   },
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "Kaixin - Innovation That Brings Happiness",
+    description:
+      "Kaixin is a modern technology startup dedicated to creating innovative solutions that bring joy and simplicity to people's lives.",
     type: "website",
+    images: ["/logo-kaixin.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
+    title: "Kaixin - Innovation That Brings Happiness",
+    description:
+      "A modern technology startup dedicated to creating innovative solutions.",
   },
 };
 
