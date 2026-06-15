@@ -8,8 +8,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "KAIXIN — No fluff. Just build.",
-  description: "Technology studio by Yovi Widianto. We design and engineer digital products.",
+  title: "KAIXIN — Digital Studio",
+  description: "Technology studio by Yovi Widianto. We design and engineer digital products that make people happy.",
   icons: { icon: "/logo-kaixin.png" },
 };
 

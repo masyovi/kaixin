@@ -28,7 +28,7 @@ const dict: Record<Locale, Record<string, string>> = {
 
     /* hero */
     "hero.stamp.est": "Est. 2024",
-    "hero.stamp.jakarta": "Jakarta, ID",
+    "hero.stamp.jakarta": "Lamongan, ID",
     "hero.line1": "We don't",
     "hero.line2": "do boring",
     "hero.highlight": "software",
@@ -173,7 +173,7 @@ const dict: Record<Locale, Record<string, string>> = {
 
     /* hero */
     "hero.stamp.est": "Est. 2024",
-    "hero.stamp.jakarta": "Jakarta, ID",
+    "hero.stamp.jakarta": "Lamongan, ID",
     "hero.line1": "Kami nggak",
     "hero.line2": "buat software",
     "hero.highlight": "membosankan",

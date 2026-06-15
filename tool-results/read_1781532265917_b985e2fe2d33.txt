@@ -1,0 +1,532 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useState, useEffect, useRef } from "react";
+     4→     4→import { motion, useInView } from "framer-motion";
+     5→     5→import {
+     6→     6→  ArrowUpRight,
+     7→     7→  Menu,
+     8→     8→  X,
+     9→     9→  Mail,
+    10→    10→  MapPin,
+    11→    11→  Send,
+    12→    12→  ExternalLink,
+    13→    13→  Globe,
+    14→    14→} from "lucide-react";
+    15→    15→import { Button } from "@/components/ui/button";
+    16→    16→import { Input } from "@/components/ui/input";
+    17→    17→import { Textarea } from "@/components/ui/textarea";
+    18→    18→import { useToast } from "@/hooks/use-toast";
+    19→    19→import { useI18n } from "@/lib/i18n";
+    20→    20→import type { Locale } from "@/lib/i18n";
+    21→    21→import Image from "next/image";
+    22→    22→
+    23→    23→/* ═══════════════ HELPERS ═══════════════ */
+    24→    24→
+    25→    25→function In({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+    26→    26→  const r = useRef(null);
+    27→    27→  const v = useInView(r, { once: true, margin: "-50px" });
+    28→    28→  return (
+    29→    29→    <motion.div ref={r} initial={{ opacity: 0, y: 24 }} animate={v ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay, ease: "easeOut" }} className={className}>
+    30→    30→      {children}
+    31→    31→    </motion.div>
+    32→    32→  );
+    33→    33→}
+    34→    34→
+    35→    35→function Count({ target, s = "" }: { target: number; s?: string }) {
+    36→    36→  const [n, setN] = useState(0);
+    37→    37→  const r = useRef(null);
+    38→    38→  const v = useInView(r, { once: true });
+    39→    39→  useEffect(() => {
+    40→    40→    if (!v) return;
+    41→    41→    let c = 0;
+    42→    42→    const step = target / 50;
+    43→    43→    const t = setInterval(() => { c += step; if (c >= target) { setN(target); clearInterval(t); } else setN(Math.floor(c)); }, 30);
+    44→    44→    return () => clearInterval(t);
+    45→    45→  }, [v, target]);
+    46→    46→  return <span ref={r}>{n.toLocaleString()}{s}</span>;
+    47→    47→}
+    48→    48→
+    49→    49→function Stamp({ children, color = "bg-kaixin text-white", rotate = -3 }: { children: React.ReactNode; color?: string; rotate?: number }) {
+    50→    50→  return (
+    51→    51→    <span className={`inline-block ${color} font-mono text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 border-2 border-foreground shadow-[3px_3px_0_0_#111]`} style={{ transform: `rotate(${rotate}deg)` }}>
+    52→    52→      {children}
+    53→    53→    </span>
+    54→    54→  );
+    55→    55→}
+    56→    56→
+    57→    57→function Block({ children, className = "", hover = true, bg = "bg-white" }: { children: React.ReactNode; className?: string; hover?: boolean; bg?: string }) {
+    58→    58→  return (
+    59→    59→    <div className={`${bg} border-2 border-foreground p-6 md:p-8 shadow-[4px_4px_0_0_#111] ${hover ? "hover:shadow-[6px_6px_0_0_#111] hover:-translate-y-1 transition-all duration-200" : ""} ${className}`}>
+    60→    60→      {children}
+    61→    61→    </div>
+    62→    62→  );
+    63→    63→}
+    64→    64→
+    65→    65→/* ═══════════════ MARQUEE ═══════════════ */
+    66→    66→
+    67→    67→function DualMarquee() {
+    68→    68→  const { t } = useI18n();
+    69→    69→  const top = [t("mq.design"), t("mq.engineer"), t("mq.ship"), t("mq.iterate")];
+    70→    70→  const bottom = [t("mq.react"), t("mq.nextjs"), t("mq.ai"), t("mq.cloud"), t("mq.mobile"), t("mq.brand"), t("mq.devops"), t("mq.strategy")];
+    71→    71→  return (
+    72→    72→    <div className="border-y-2 border-foreground bg-kaixin text-white overflow-hidden select-none">
+    73→    73→      <div className="py-3 border-b border-white/20">
+    74→    74→        <div className="marquee-l flex whitespace-nowrap">
+    75→    75→          {[...top, ...top].map((t2, i) => (
+    76→    76→            <span key={i} className="mx-6 text-sm font-bold tracking-[0.2em]">{t2}<span className="ml-6 text-white/40">✦</span></span>
+    77→    77→          ))}
+    78→    78→        </div>
+    79→    79→      </div>
+    80→    80→      <div className="py-3 bg-white text-foreground">
+    81→    81→        <div className="marquee-r flex whitespace-nowrap">
+    82→    82→          {[...bottom, ...bottom].map((t2, i) => (
+    83→    83→            <span key={i} className="mx-6 text-sm font-bold tracking-[0.2em]">{t2}<span className="ml-6 text-foreground/30">◆</span></span>
+    84→    84→          ))}
+    85→    85→        </div>
+    86→    86→      </div>
+    87→    87→    </div>
+    88→    88→  );
+    89→    89→}
+    90→    90→
+    91→    91→/* ═══════════════ LANGUAGE TOGGLE ═══════════════ */
+    92→    92→
+    93→    93→function LangToggle() {
+    94→    94→  const { locale, setLocale, t } = useI18n();
+    95→    95→  const toggle = () => setLocale(locale === "en" ? "id" : "en");
+    96→    96→  const label = locale === "en" ? "ID" : "EN";
+    97→    97→
+    98→    98→  return (
+    99→    99→    <button
+   100→   100→      onClick={toggle}
+   101→   101→      className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold uppercase tracking-wider border-2 border-foreground bg-white hover:bg-kaixin hover:text-white transition-colors shadow-[2px_2px_0_0_#111]"
+   102→   102→      aria-label={`Switch to ${label}`}
+   103→   103→    >
+   104→   104→      <Globe className="w-3.5 h-3.5" />
+   105→   105→      {label}
+   106→   106→    </button>
+   107→   107→  );
+   108→   108→}
+   109→   109→
+   110→   110→/* ═══════════════ PAGE ═══════════════ */
+   111→   111→
+   112→   112→export default function Page() {
+   113→   113→  const [menuOpen, setMenuOpen] = useState(false);
+   114→   114→  const [sending, setSending] = useState(false);
+   115→   115→  const [showTop, setShowTop] = useState(false);
+   116→   116→  const { t } = useI18n();
+   117→   117→  const { toast } = useToast();
+   118→   118→
+   119→   119→  useEffect(() => {
+   120→   120→    const h = () => setShowTop(window.scrollY > 600);
+   121→   121→    window.addEventListener("scroll", h, { passive: true });
+   122→   122→    return () => window.removeEventListener("scroll", h);
+   123→   123→  }, []);
+   124→   124→
+   125→   125→  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+   126→   126→    e.preventDefault();
+   127→   127→    setSending(true);
+   128→   128→    const fd = new FormData(e.currentTarget);
+   129→   129→    try {
+   130→   130→      const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: fd.get("name"), email: fd.get("email"), subject: fd.get("subject"), message: fd.get("message") }) });
+   131→   131→      if (!res.ok) throw new Error();
+   132→   132→      toast({ title: t("toast.sent"), description: t("toast.sent.desc") });
+   133→   133→      e.currentTarget.reset();
+   134→   134→    } catch { toast({ title: t("toast.error"), description: t("toast.error.desc"), variant: "destructive" }); }
+   135→   135→    finally { setSending(false); }
+   136→   136→  };
+   137→   137→
+   138→   138→  const services = [
+   139→   139→    { num: "01", titleKey: "svc.01.title", descKey: "svc.01.desc", tools: ["Figma", "Prototyping", "Design Systems"] },
+   140→   140→    { num: "02", titleKey: "svc.02.title", descKey: "svc.02.desc", tools: ["React", "Next.js", "TypeScript"] },
+   141→   141→    { num: "03", titleKey: "svc.03.title", descKey: "svc.03.desc", tools: ["OpenAI", "LangChain", "Python"] },
+   142→   142→    { num: "04", titleKey: "svc.04.title", descKey: "svc.04.desc", tools: ["AWS", "Terraform", "Kubernetes"] },
+   143→   143→    { num: "05", titleKey: "svc.05.title", descKey: "svc.05.desc", tools: ["Swift", "Kotlin", "React Native"] },
+   144→   144→    { num: "06", titleKey: "svc.06.title", descKey: "svc.06.desc", tools: ["Strategy", "Visual ID", "Motion"] },
+   145→   145→  ];
+   146→   146→
+   147→   147→  const projects = [
+   148→   148→    { tagKey: "prj.01.tag", titleKey: "prj.01.title", year: "24" },
+   149→   149→    { tagKey: "prj.02.tag", titleKey: "prj.02.title", year: "24" },
+   150→   150→    { tagKey: "prj.03.tag", titleKey: "prj.03.title", year: "24" },
+   151→   151→    { tagKey: "prj.04.tag", titleKey: "prj.04.title", year: "23" },
+   152→   152→  ];
+   153→   153→
+   154→   154→  const donts = ["dnd.1", "dnd.2", "dnd.3", "dnd.4", "dnd.5"];
+   155→   155→
+   156→   156→  const philosophies = [
+   157→   157→    { labelKey: "ph.01.label", textKey: "ph.01.text", color: "bg-kaixin text-white border-foreground" },
+   158→   158→    { labelKey: "ph.02.label", textKey: "ph.02.text", color: "bg-white text-foreground border-foreground" },
+   159→   159→    { labelKey: "ph.03.label", textKey: "ph.03.text", color: "bg-white text-foreground border-foreground" },
+   160→   160→    { labelKey: "ph.04.label", textKey: "ph.04.text", color: "bg-foreground text-white border-white" },
+   161→   161→  ];
+   162→   162→
+   163→   163→  const otherTeam = [
+   164→   164→    { nameKey: "team.sarah.name", roleKey: "team.sarah.role", initials: "SC" },
+   165→   165→    { nameKey: "team.budi.name", roleKey: "team.budi.role", initials: "BS" },
+   166→   166→    { nameKey: "team.linda.name", roleKey: "team.linda.role", initials: "LK" },
+   167→   167→    { nameKey: "team.reza.name", roleKey: "team.reza.role", initials: "RP" },
+   168→   168→  ];
+   169→   169→
+   170→   170→  return (
+   171→   171→    <div className="min-h-screen flex flex-col bg-background">
+   172→   172→      {/* ═══ NAV ═══ */}
+   173→   173→      <header className="fixed top-0 inset-x-0 z-50 bg-background border-b-2 border-foreground">
+   174→   174→        <nav className="max-w-[1400px] mx-auto px-6 md:px-10 flex items-center justify-between h-16">
+   175→   175→          <a href="#" className="flex items-center gap-2.5">
+   176→   176→            <Image src="/logo-kaixin.png" alt="" width={28} height={28} className="rounded border border-foreground" />
+   177→   177→            <span className="text-[16px] font-extrabold tracking-tight uppercase">Kaixin</span>
+   178→   178→          </a>
+   179→   179→          <div className="hidden md:flex items-center gap-2">
+   180→   180→            {[t("nav.work"), t("nav.about"), t("nav.team"), t("nav.contact")].map((n, i) => (
+   181→   181→              <a key={i} href={`#${["work","about","team","contact"][i]}`} className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-wider hover:bg-foreground hover:text-white transition-colors border-2 border-transparent hover:border-foreground">{n}</a>
+   182→   182→            ))}
+   183→   183→            <div className="ml-2"><LangToggle /></div>
+   184→   184→          </div>
+   185→   185→          <div className="flex md:hidden items-center gap-2">
+   186→   186→            <LangToggle />
+   187→   187→            <button onClick={() => setMenuOpen(!menuOpen)} className="w-10 h-10 flex items-center justify-center border-2 border-foreground bg-white hover:bg-foreground hover:text-white transition-colors" aria-label="Menu">
+   188→   188→              {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+   189→   189→            </button>
+   190→   190→          </div>
+   191→   191→        </nav>
+   192→   192→      </header>
+   193→   193→
+   194→   194→      {/* Mobile menu */}
+   195→   195→      <div className={`fixed inset-0 z-40 bg-kaixin flex flex-col items-center justify-center gap-6 transition-all duration-400 border-2 border-foreground md:hidden ${menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
+   196→   196→        {[t("nav.work"), t("nav.about"), t("nav.team"), t("nav.contact")].map((n, i) => (
+   197→   197→          <a key={i} href={`#${["work","about","team","contact"][i]}`} onClick={() => setMenuOpen(false)} className="text-3xl font-extrabold uppercase text-white tracking-wider hover:underline">{n}</a>
+   198→   198→        ))}
+   199→   199→      </div>
+   200→   200→
+   201→   201→      <main className="flex-1">
+   202→   202→
+   203→   203→        {/* ═══ HERO ═══ */}
+   204→   204→        <section className="relative min-h-[92dvh] flex items-center border-b-2 border-foreground">
+   205→   205→          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "repeating-linear-gradient(0deg, #111 0, #111 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, #111 0, #111 1px, transparent 1px, transparent 40px)" }} />
+   206→   206→          <div className="relative max-w-[1400px] mx-auto px-6 md:px-10 pt-28 pb-20 w-full">
+   207→   207→            <div className="grid md:grid-cols-12 gap-8 md:gap-6 items-end">
+   208→   208→              <div className="md:col-span-8">
+   209→   209→                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+   210→   210→                  <div className="flex flex-wrap items-center gap-3 mb-8">
+   211→   211→                    <Stamp color="bg-kaixin text-white" rotate={-2}>{t("hero.stamp.est")}</Stamp>
+   212→   212→                    <Stamp color="bg-white text-foreground" rotate={1}>{t("hero.stamp.jakarta")}</Stamp>
+   213→   213→                  </div>
+   214→   214→                </motion.div>
+   215→   215→                <motion.h1
+   216→   216→                  initial={{ opacity: 0, y: 30 }}
+   217→   217→                  animate={{ opacity: 1, y: 0 }}
+   218→   218→                  transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+   219→   219→                  className="text-[clamp(2.5rem,7.5vw,6.5rem)] font-extrabold leading-[0.9] tracking-[-0.03em] uppercase"
+   220→   220→                >
+   221→   221→                  {t("hero.line1")}
+   222→   222→                  <br />
+   223→   223→                  {t("hero.line2")}
+   224→   224→                  <br />
+   225→   225→                  <span className="relative inline-block">
+   226→   226→                    <span className="bg-kaixin text-white px-3 -rotate-1 inline-block">{t("hero.highlight")}</span>
+   227→   227→                  </span>
+   228→   228→                  <span className="text-kaixin">.</span>
+   229→   229→                </motion.h1>
+   230→   230→                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-10 flex flex-col sm:flex-row gap-4 sm:gap-8 items-start sm:items-end">
+   231→   231→                  <p className="text-[15px] leading-relaxed max-w-sm text-foreground/70">{t("hero.desc")}</p>
+   232→   232→                  <a href="#work" className="inline-flex items-center gap-2 bg-foreground text-white px-5 py-3 font-bold text-[13px] uppercase tracking-wider border-2 border-foreground hover:bg-kaixin transition-colors shadow-[4px_4px_0_0_#FF6600]">
+   233→   233→                    {t("hero.cta")}
+   234→   234→                    <ArrowUpRight className="w-4 h-4" />
+   235→   235→                  </a>
+   236→   236→                </motion.div>
+   237→   237→              </div>
+   238→   238→              <div className="md:col-span-4">
+   239→   239→                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+   240→   240→                  <Block hover={false} className="bg-kaixin border-foreground shadow-[4px_4px_0_0_#111]">
+   241→   241→                    <p className="font-mono text-[11px] uppercase tracking-widest text-white/60 mb-4">
+   242→   242→                      {t("hero.desc").split(".")[0]}
+   243→   243→                    </p>
+   244→   244→                    <div className="space-y-3 text-white">
+   245→   245→                      {[
+   246→   246→                        { l: t("stat.projects"), v: "200+" },
+   247→   247→                        { l: t("stat.retention"), v: "98%" },
+   248→   248→                        { l: t("stat.team"), v: "15" },
+   249→   249→                        { l: t("stat.rating"), v: "4.9/5" },
+   250→   250→                      ].map((item) => (
+   251→   251→                        <div key={item.l} className="flex justify-between border-b border-white/20 pb-2 last:border-0">
+   252→   252→                          <span className="font-bold text-[13px] uppercase">{item.l}</span>
+   253→   253→                          <span className="font-mono text-[13px]">{item.v}</span>
+   254→   254→                        </div>
+   255→   255→                      ))}
+   256→   256→                    </div>
+   257→   257→                  </Block>
+   258→   258→                </motion.div>
+   259→   259→              </div>
+   260→   260→            </div>
+   261→   261→          </div>
+   262→   262→        </section>
+   263→   263→
+   264→   264→        <DualMarquee />
+   265→   265→
+   266→   266→        {/* ═══ SERVICES ═══ */}
+   267→   267→        <section id="work" className="py-20 md:py-28">
+   268→   268→          <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+   269→   269→            <In className="mb-14 md:mb-20">
+   270→   270→              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+   271→   271→                <div>
+   272→   272→                  <Stamp color="bg-kaixin text-white" rotate={-2}>{t("svc.stamp")}</Stamp>
+   273→   273→                  <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5">
+   274→   274→                    {t("svc.title")}
+   275→   275→                    <br />
+   276→   276→                    <span className="text-foreground/40">{t("svc.subtitle")}</span>
+   277→   277→                  </h2>
+   278→   278→                </div>
+   279→   279→              </div>
+   280→   280→            </In>
+   281→   281→            <div className="grid md:grid-cols-2 gap-4">
+   282→   282→              {services.map((s, i) => (
+   283→   283→                <In key={s.num} delay={i * 0.06}>
+   284→   284→                  <Block className="group cursor-pointer h-full">
+   285→   285→                    <div className="flex items-start justify-between mb-5">
+   286→   286→                      <span className="font-mono text-[13px] font-bold text-foreground/30">{s.num}</span>
+   287→   287→                      <ExternalLink className="w-4 h-4 text-foreground/20 group-hover:text-kaixin transition-colors" />
+   288→   288→                    </div>
+   289→   289→                    <h3 className="text-xl md:text-2xl font-extrabold uppercase tracking-tight mb-3 group-hover:text-kaixin transition-colors">{t(s.titleKey)}</h3>
+   290→   290→                    <p className="text-[14px] leading-relaxed text-foreground/60 mb-6">{t(s.descKey)}</p>
+   291→   291→                    <div className="flex flex-wrap gap-2">
+   292→   292→                      {s.tools.map((tl) => (
+   293→   293→                        <span key={tl} className="font-mono text-[11px] uppercase tracking-wider bg-background border border-foreground px-2.5 py-1">{tl}</span>
+   294→   294→                      ))}
+   295→   295→                    </div>
+   296→   296→                  </Block>
+   297→   297→                </In>
+   298→   298→              ))}
+   299→   299→            </div>
+   300→   300→          </div>
+   301→   301→        </section>
+   302→   302→
+   303→   303→        {/* ═══ PROJECTS ═══ */}
+   304→   304→        <section className="py-20 md:py-28 bg-foreground text-white border-y-2 border-foreground">
+   305→   305→          <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+   306→   306→            <In className="mb-14">
+   307→   307→              <Stamp color="bg-white text-foreground border-white" rotate={2}>{t("prj.stamp")}</Stamp>
+   308→   308→              <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5 text-white">
+   309→   309→                {t("prj.title")}
+   310→   310→              </h2>
+   311→   311→            </In>
+   312→   312→            <div className="grid md:grid-cols-2 gap-4">
+   313→   313→              {projects.map((p, i) => (
+   314→   314→                <In key={i} delay={i * 0.08}>
+   315→   315→                  <Block hover={true} bg="bg-foreground" className="border-white group cursor-pointer">
+   316→   316→                    <div className="flex items-start justify-between mb-6">
+   317→   317→                      <span className="font-mono text-[11px] font-bold text-kaixin bg-kaixin/20 px-2 py-1">{t(p.tagKey)}</span>
+   318→   318→                      <span className="font-mono text-[12px] text-white/40">{p.year}</span>
+   319→   319→                    </div>
+   320→   320→                    <p className="text-lg md:text-xl font-bold uppercase leading-snug text-white mb-5">{t(p.titleKey)}</p>
+   321→   321→                    <div className="flex items-center gap-2 text-white/50 group-hover:text-kaixin group-hover:gap-3 transition-all text-[13px] font-bold uppercase tracking-wider">
+   322→   322→                      <span>{t("svc.case")}</span>
+   323→   323→                      <ArrowUpRight className="w-4 h-4" />
+   324→   324→                    </div>
+   325→   325→                  </Block>
+   326→   326→                </In>
+   327→   327→              ))}
+   328→   328→            </div>
+   329→   329→          </div>
+   330→   330→        </section>
+   331→   331→
+   332→   332→        {/* ═══ ABOUT ═══ */}
+   333→   333→        <section id="about" className="py-20 md:py-28">
+   334→   334→          <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+   335→   335→            <div className="grid md:grid-cols-12 gap-6">
+   336→   336→              <div className="md:col-span-7">
+   337→   337→                <In>
+   338→   338→                  <Stamp color="bg-kaixin text-white" rotate={-3}>{t("abt.stamp")}</Stamp>
+   339→   339→                  <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5 leading-[1.05]">
+   340→   340→                    {t("abt.title")}
+   341→   341→                    <br />
+   342→   342→                    {t("abt.title2")}<span className="text-foreground/30">.</span>
+   343→   343→                  </h2>
+   344→   344→                </In>
+   345→   345→                <In delay={0.1} className="mt-8 space-y-6 text-[15px] leading-[1.85] text-foreground/70 max-w-lg">
+   346→   346→                  <p>
+   347→   347→                    {t("abt.p1")} <span className="text-foreground font-bold border-b-2 border-kaixin">{t("abt.p1.bold")}</span> {t("abt.p1.rest")}
+   348→   348→                  </p>
+   349→   349→                  <p>
+   350→   350→                    {t("abt.p2")} <span className="font-bold text-foreground">{t("abt.p2.bold")}</span>. {t("abt.p2.end")}
+   351→   351→                  </p>
+   352→   352→                </In>
+   353→   353→                <In delay={0.2} className="mt-12">
+   354→   354→                  <Block hover={false} className="bg-secondary">
+   355→   355→                    <p className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-5">{t("dnd.title")}</p>
+   356→   356→                    <div className="space-y-3">
+   357→   357→                      {donts.map((key) => (
+   358→   358→                        <div key={key} className="flex items-start gap-3">
+   359→   359→                          <span className="font-mono text-kaixin font-bold text-lg leading-none mt-0.5">✕</span>
+   360→   360→                          <span className="text-[14px] text-foreground/70">{t(key)}</span>
+   361→   361→                        </div>
+   362→   362→                      ))}
+   363→   363→                    </div>
+   364→   364→                  </Block>
+   365→   365→                </In>
+   366→   366→              </div>
+   367→   367→              <div className="md:col-span-5 space-y-4">
+   368→   368→                {philosophies.map((item, i) => (
+   369→   369→                  <In key={i} delay={i * 0.08}>
+   370→   370→                    <Block hover={true} className={item.color} style={{ boxShadow: "4px 4px 0 0 #FF6600" }}>
+   371→   371→                      <p className="font-mono text-[10px] tracking-[0.2em] opacity-50 mb-3">{t(item.labelKey)}</p>
+   372→   372→                      <p className="text-[17px] font-bold leading-snug">{t(item.textKey)}</p>
+   373→   373→                    </Block>
+   374→   374→                  </In>
+   375→   375→                ))}
+   376→   376→              </div>
+   377→   377→            </div>
+   378→   378→          </div>
+   379→   379→        </section>
+   380→   380→
+   381→   381→        {/* ═══ TEAM ═══ */}
+   382→   382→        <section id="team" className="py-20 md:py-28 bg-secondary border-y-2 border-foreground">
+   383→   383→          <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+   384→   384→            <In className="mb-14">
+   385→   385→              <Stamp color="bg-foreground text-white" rotate={2}>{t("team.stamp")}</Stamp>
+   386→   386→              <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5">
+   387→   387→                {t("team.title")}
+   388→   388→              </h2>
+   389→   389→            </In>
+   390→   390→            <In className="mb-6">
+   391→   391→              <Block hover={true} className="md:flex md:items-center md:gap-12">
+   392→   392→                <div className="flex items-start gap-6 md:w-1/3">
+   393→   393→                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-none border-2 border-foreground bg-kaixin flex items-center justify-center shadow-[3px_3px_0_0_#111] flex-shrink-0" style={{ transform: "rotate(2deg)" }}>
+   394→   394→                    <span className="text-3xl md:text-4xl font-extrabold text-white">YW</span>
+   395→   395→                  </div>
+   396→   396→                  <div>
+   397→   397→                    <h3 className="text-2xl md:text-3xl font-extrabold uppercase tracking-tight">{t("team.yovi.name")}</h3>
+   398→   398→                    <Stamp color="bg-kaixin text-white border-foreground" rotate={-2}>{t("team.founder.stamp")}</Stamp>
+   399→   399→                  </div>
+   400→   400→                </div>
+   401→   401→                <div className="mt-6 md:mt-0 md:w-2/3">
+   402→   402→                  <p className="text-[15px] leading-[1.8] text-foreground/60 mb-6">{t("team.yovi.desc")}</p>
+   403→   403→                  <div className="flex gap-2">
+   404→   404→                    {["LinkedIn", "GitHub", "Twitter"].map((s) => (
+   405→   405→                      <button key={s} className="px-3 py-2 text-[12px] font-bold uppercase tracking-wider border-2 border-foreground bg-white hover:bg-kaixin hover:text-white transition-colors shadow-[2px_2px_0_0_#111]">
+   406→   406→                        {s}
+   407→   407→                      </button>
+   408→   408→                    ))}
+   409→   409→                  </div>
+   410→   410→                </div>
+   411→   411→              </Block>
+   412→   412→            </In>
+   413→   413→            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+   414→   414→              {otherTeam.map((m) => (
+   415→   415→                <In key={m.initials}>
+   416→   416→                  <Block hover={true} className="text-center group">
+   417→   417→                    <div className="w-14 h-14 mx-auto border-2 border-foreground bg-secondary flex items-center justify-center mb-4 group-hover:bg-kaixin group-hover:text-white transition-colors shadow-[2px_2px_0_0_#111]">
+   418→   418→                      <span className="font-bold text-[13px]">{m.initials}</span>
+   419→   419→                    </div>
+   420→   420→                    <p className="font-bold text-[14px] uppercase tracking-tight">{t(m.nameKey)}</p>
+   421→   421→                    <p className="font-mono text-[10px] tracking-[0.15em] text-foreground/40 mt-1">{t(m.roleKey)}</p>
+   422→   422→                  </Block>
+   423→   423→                </In>
+   424→   424→              ))}
+   425→   425→            </div>
+   426→   426→          </div>
+   427→   427→        </section>
+   428→   428→
+   429→   429→        {/* ═══ CTA ═══ */}
+   430→   430→        <section className="py-20 md:py-24">
+   431→   431→          <div className="max-w-[1400px] mx-auto px-6 md:px-10 text-center">
+   432→   432→            <In>
+   433→   433→              <h2 className="text-4xl md:text-[4.5rem] font-extrabold tracking-tight uppercase leading-[0.95]">
+   434→   434→                {t("cta.title")}
+   435→   435→              </h2>
+   436→   436→              <p className="text-foreground/50 text-[15px] mt-4 max-w-md mx-auto">{t("cta.desc")}</p>
+   437→   437→              <div className="mt-8 flex justify-center gap-4">
+   438→   438→                <a href="#contact" className="inline-flex items-center gap-2 bg-kaixin text-white px-6 py-3.5 font-bold text-[13px] uppercase tracking-wider border-2 border-foreground shadow-[4px_4px_0_0_#111] hover:shadow-[2px_2px_0_0_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all">
+   439→   439→                  {t("cta.btn")}
+   440→   440→                  <ArrowUpRight className="w-4 h-4" />
+   441→   441→                </a>
+   442→   442→              </div>
+   443→   443→            </In>
+   444→   444→          </div>
+   445→   445→        </section>
+   446→   446→
+   447→   447→        {/* ═══ CONTACT ═══ */}
+   448→   448→        <section id="contact" className="py-20 md:py-28 bg-foreground text-white border-t-2 border-white">
+   449→   449→          <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+   450→   450→            <div className="grid md:grid-cols-2 gap-10 md:gap-16">
+   451→   451→              <div>
+   452→   452→                <In>
+   453→   453→                  <Stamp color="bg-kaixin text-white border-white" rotate={-2}>{t("con.stamp")}</Stamp>
+   454→   454→                  <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5 text-white">
+   455→   455→                    {t("con.title")}
+   456→   456→                  </h2>
+   457→   457→                </In>
+   458→   458→                <In delay={0.1} className="mt-10 space-y-5">
+   459→   459→                  <p className="text-white/50 text-[15px] leading-relaxed max-w-sm">{t("con.desc")}</p>
+   460→   460→                  <div className="space-y-3">
+   461→   461→                    {[
+   462→   462→                      { icon: Mail, label: "hello@kaixin.tech" },
+   463→   463→                      { icon: MapPin, label: "Jakarta, Indonesia" },
+   464→   464→                    ].map((c) => (
+   465→   465→                      <div key={c.label} className="flex items-center gap-3">
+   466→   466→                        <div className="w-10 h-10 border-2 border-white flex items-center justify-center"><c.icon className="w-4 h-4 text-white/60" /></div>
+   467→   467→                        <span className="text-[14px] text-white/60">{c.label}</span>
+   468→   468→                      </div>
+   469→   469→                    ))}
+   470→   470→                  </div>
+   471→   471→                </In>
+   472→   472→              </div>
+   473→   473→              <In delay={0.15}>
+   474→   474→                <form onSubmit={handleSubmit} className="space-y-4">
+   475→   475→                  <div className="grid sm:grid-cols-2 gap-4">
+   476→   476→                    <div>
+   477→   477→                      <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">{t("con.name")}</label>
+   478→   478→                      <Input name="name" placeholder={t("con.name.ph")} required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
+   479→   479→                    </div>
+   480→   480→                    <div>
+   481→   481→                      <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">{t("con.email")}</label>
+   482→   482→                      <Input name="email" type="email" placeholder={t("con.email.ph")} required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
+   483→   483→                    </div>
+   484→   484→                  </div>
+   485→   485→                  <div>
+   486→   486→                    <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">{t("con.subject")}</label>
+   487→   487→                    <Input name="subject" placeholder={t("con.subject.ph")} required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
+   488→   488→                  </div>
+   489→   489→                  <div>
+   490→   490→                    <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">{t("con.message")}</label>
+   491→   491→                    <Textarea name="message" placeholder={t("con.message.ph")} required rows={5} className="bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none resize-none" />
+   492→   492→                  </div>
+   493→   493→                  <Button type="submit" disabled={sending} className="h-12 w-full sm:w-auto bg-kaixin hover:bg-kaixin-dark text-white text-[13px] font-bold uppercase tracking-wider px-8 border-2 border-white shadow-[3px_3px_0_0_rgba(255,255,255,0.3)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all gap-2">
+   494→   494→                    {sending ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+   495→   495→                    {sending ? t("con.sending") : t("con.btn")}
+   496→   496→                  </Button>
+   497→   497→                </form>
+   498→   498→              </In>
+   499→   499→            </div>
+   500→   500→          </div>
+   501→   501→        </section>
+   502→   502→      </main>
+   503→   503→
+   504→   504→      {/* ═══ FOOTER ═══ */}
+   505→   505→      <footer className="border-t-2 border-foreground">
+   506→   506→        <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+   507→   507→          <div className="flex items-center gap-3">
+   508→   508→            <Image src="/logo-kaixin.png" alt="" width={22} height={22} className="rounded border border-foreground" />
+   509→   509→            <span className="text-[13px] font-bold uppercase tracking-wider">Kaixin</span>
+   510→   510→          </div>
+   511→   511→          <p className="font-mono text-[11px] text-foreground/40 uppercase tracking-wider">© {new Date().getFullYear()} — {t("ft.copy")}</p>
+   512→   512→          <div className="flex gap-4">
+   513→   513→            {["Twitter", "GitHub", "LinkedIn"].map((s) => (
+   514→   514→              <a key={s} href="#" className="font-mono text-[11px] text-foreground/40 uppercase tracking-wider hover:text-kaixin transition-colors">{s}</a>
+   515→   515→            ))}
+   516→   516→          </div>
+   517→   517→        </div>
+   518→   518→      </footer>
+   519→   519→
+   520→   520→      <motion.button
+   521→   521→        initial={{ opacity: 0, scale: 0.8 }}
+   522→   522→        animate={showTop ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+   523→   523→        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+   524→   524→        className="fixed bottom-6 right-6 z-50 w-11 h-11 bg-kaixin text-white border-2 border-foreground flex items-center justify-center shadow-[3px_3px_0_0_#111] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+   525→   525→        aria-label="Top"
+   526→   526→      >
+   527→   527→        <ArrowUpRight className="w-4 h-4 -rotate-45" />
+   528→   528→      </motion.button>
+   529→   529→    </div>
+   530→   530→  );
+   531→   531→}
+   532→   532→
