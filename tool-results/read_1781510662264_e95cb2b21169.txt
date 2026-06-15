@@ -1,0 +1,1327 @@
+     1→"use client";
+     2→
+     3→import { useState, useEffect, useRef } from "react";
+     4→import { motion, useInView, AnimatePresence } from "framer-motion";
+     5→import {
+     6→  Menu,
+     7→  X,
+     8→  Rocket,
+     9→  Shield,
+    10→  Zap,
+    11→  Users,
+    12→  Code,
+    13→  Globe,
+    14→  ArrowRight,
+    15→  Mail,
+    16→  Phone,
+    17→  MapPin,
+    18→  Send,
+    19→  ChevronUp,
+    20→  Heart,
+    21→  Lightbulb,
+    22→  Target,
+    23→  Sparkles,
+    24→  Star,
+    25→  CheckCircle2,
+    26→  Linkedin,
+    27→  Twitter,
+    28→  Github,
+    29→  Instagram,
+    30→} from "lucide-react";
+    31→import { Button } from "@/components/ui/button";
+    32→import { Input } from "@/components/ui/input";
+    33→import { Textarea } from "@/components/ui/textarea";
+    34→import {
+    35→  Card,
+    36→  CardContent,
+    37→  CardDescription,
+    38→  CardHeader,
+    39→  CardTitle,
+    40→} from "@/components/ui/card";
+    41→import { Badge } from "@/components/ui/badge";
+    42→import { useToast } from "@/hooks/use-toast";
+    43→import Image from "next/image";
+    44→
+    45→/* ─── Animated Counter ─── */
+    46→function Counter({ target, suffix = "" }: { target: number; suffix?: string }) {
+    47→  const [count, setCount] = useState(0);
+    48→  const ref = useRef<HTMLSpanElement>(null);
+    49→  const inView = useInView(ref, { once: true });
+    50→
+    51→  useEffect(() => {
+    52→    if (!inView) return;
+    53→    let start = 0;
+    54→    const duration = 2000;
+    55→    const step = target / (duration / 16);
+    56→    const timer = setInterval(() => {
+    57→      start += step;
+    58→      if (start >= target) {
+    59→        setCount(target);
+    60→        clearInterval(timer);
+    61→      } else {
+    62→        setCount(Math.floor(start));
+    63→      }
+    64→    }, 16);
+    65→    return () => clearInterval(timer);
+    66→  }, [inView, target]);
+    67→
+    68→  return (
+    69→    <span ref={ref}>
+    70→      {count.toLocaleString()}
+    71→      {suffix}
+    72→    </span>
+    73→  );
+    74→}
+    75→
+    76→/* ─── Fade-in wrapper ─── */
+    77→function FadeIn({
+    78→  children,
+    79→  delay = 0,
+    80→  direction = "up",
+    81→  className = "",
+    82→}: {
+    83→  children: React.ReactNode;
+    84→  delay?: number;
+    85→  direction?: "up" | "down" | "left" | "right";
+    86→  className?: string;
+    87→}) {
+    88→  const ref = useRef(null);
+    89→  const inView = useInView(ref, { once: true, margin: "-50px" });
+    90→  const dirMap = {
+    91→    up: { y: 40, x: 0 },
+    92→    down: { y: -40, x: 0 },
+    93→    left: { y: 0, x: 40 },
+    94→    right: { y: 0, x: -40 },
+    95→  };
+    96→  return (
+    97→    <motion.div
+    98→      ref={ref}
+    99→      initial={{ opacity: 0, ...dirMap[direction] }}
+   100→      animate={inView ? { opacity: 1, y: 0, x: 0 } : {}}
+   101→      transition={{ duration: 0.6, delay, ease: "easeOut" }}
+   102→      className={className}
+   103→    >
+   104→      {children}
+   105→    </motion.div>
+   106→  );
+   107→}
+   108→
+   109→/* ─── Section Heading ─── */
+   110→function SectionHeading({
+   111→  badge,
+   112→  title,
+   113→  subtitle,
+   114→}: {
+   115→  badge: string;
+   116→  title: string;
+   117→  subtitle: string;
+   118→}) {
+   119→  return (
+   120→    <div className="text-center max-w-3xl mx-auto mb-16">
+   121→      <FadeIn>
+   122→        <Badge
+   123→          variant="secondary"
+   124→          className="bg-kaixin-50 text-kaixin-600 hover:bg-kaixin-100 border-kaixin-200 mb-4 px-4 py-1.5 text-sm font-medium"
+   125→        >
+   126→          {badge}
+   127→        </Badge>
+   128→      </FadeIn>
+   129→      <FadeIn delay={0.1}>
+   130→        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 tracking-tight">
+   131→          {title}
+   132→        </h2>
+   133→      </FadeIn>
+   134→      <FadeIn delay={0.2}>
+   135→        <p className="text-muted-foreground text-lg leading-relaxed">
+   136→          {subtitle}
+   137→        </p>
+   138→      </FadeIn>
+   139→    </div>
+   140→  );
+   141→}
+   142→
+   143→/* ─────────────────────────── MAIN PAGE ─────────────────────────── */
+   144→export default function HomePage() {
+   145→  const [scrolled, setScrolled] = useState(false);
+   146→  const [mobileOpen, setMobileOpen] = useState(false);
+   147→  const [showTop, setShowTop] = useState(false);
+   148→  const [sending, setSending] = useState(false);
+   149→  const { toast } = useToast();
+   150→
+   151→  useEffect(() => {
+   152→    const onScroll = () => {
+   153→      setScrolled(window.scrollY > 50);
+   154→      setShowTop(window.scrollY > 400);
+   155→    };
+   156→    window.addEventListener("scroll", onScroll, { passive: true });
+   157→    return () => window.removeEventListener("scroll", onScroll);
+   158→  }, []);
+   159→
+   160→  const navLinks = [
+   161→    { label: "About", href: "#about" },
+   162→    { label: "Services", href: "#services" },
+   163→    { label: "Team", href: "#team" },
+   164→    { label: "Contact", href: "#contact" },
+   165→  ];
+   166→
+   167→  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+   168→    e.preventDefault();
+   169→    setSending(true);
+   170→    const form = e.currentTarget;
+   171→    const data = new FormData(form);
+   172→    const payload = {
+   173→      name: data.get("name") as string,
+   174→      email: data.get("email") as string,
+   175→      subject: data.get("subject") as string,
+   176→      message: data.get("message") as string,
+   177→    };
+   178→
+   179→    try {
+   180→      const res = await fetch("/api/contact", {
+   181→        method: "POST",
+   182→        headers: { "Content-Type": "application/json" },
+   183→        body: JSON.stringify(payload),
+   184→      });
+   185→      if (!res.ok) throw new Error("Failed");
+   186→      toast({
+   187→        title: "Message sent!",
+   188→        description: "Thank you for reaching out. We'll get back to you soon.",
+   189→        className: "bg-kaixin-50 border-kaixin-200 text-kaixin-800",
+   190→      });
+   191→      form.reset();
+   192→    } catch {
+   193→      toast({
+   194→        title: "Something went wrong",
+   195→        description: "Please try again later.",
+   196→        variant: "destructive",
+   197→      });
+   198→    } finally {
+   199→      setSending(false);
+   200→    }
+   201→  };
+   202→
+   203→  return (
+   204→    <div className="min-h-screen flex flex-col">
+   205→      {/* ───── NAVBAR ───── */}
+   206→      <header
+   207→        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+   208→          scrolled
+   209→            ? "bg-white/90 backdrop-blur-lg shadow-sm border-b border-kaixin-100"
+   210→            : "bg-transparent"
+   211→        }`}
+   212→      >
+   213→        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
+   214→          <a href="#" className="flex items-center gap-3 group">
+   215→            <div className="relative">
+   216→              <Image
+   217→                src="/logo-kaixin.png"
+   218→                alt="Kaixin Logo"
+   219→                width={42}
+   220→                height={42}
+   221→                className="rounded-xl transition-transform group-hover:scale-105"
+   222→              />
+   223→              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-kaixin-400 to-kaixin-600 opacity-0 group-hover:opacity-20 blur transition-opacity" />
+   224→            </div>
+   225→            <span className="text-xl md:text-2xl font-bold tracking-tight">
+   226→              <span className="text-foreground">Kai</span>
+   227→              <span className="text-kaixin">xin</span>
+   228→            </span>
+   229→          </a>
+   230→
+   231→          {/* Desktop nav */}
+   232→          <div className="hidden md:flex items-center gap-1">
+   233→            {navLinks.map((l) => (
+   234→              <a
+   235→                key={l.href}
+   236→                href={l.href}
+   237→                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-kaixin transition-colors rounded-lg hover:bg-kaixin-50"
+   238→              >
+   239→                {l.label}
+   240→              </a>
+   241→            ))}
+   242→            <Button
+   243→              asChild
+   244→              className="ml-3 bg-kaixin hover:bg-kaixin-dark text-white shadow-lg shadow-kaixin/25 hover:shadow-kaixin/40 transition-all"
+   245→            >
+   246→              <a href="#contact">Get in Touch</a>
+   247→            </Button>
+   248→          </div>
+   249→
+   250→          {/* Mobile toggle */}
+   251→          <button
+   252→            onClick={() => setMobileOpen(!mobileOpen)}
+   253→            className="md:hidden p-2 rounded-lg hover:bg-kaixin-50 transition-colors"
+   254→            aria-label="Toggle menu"
+   255→          >
+   256→            {mobileOpen ? (
+   257→              <X className="w-6 h-6 text-foreground" />
+   258→            ) : (
+   259→              <Menu className="w-6 h-6 text-foreground" />
+   260→            )}
+   261→          </button>
+   262→        </nav>
+   263→
+   264→        {/* Mobile menu */}
+   265→        <AnimatePresence>
+   266→          {mobileOpen && (
+   267→            <motion.div
+   268→              initial={{ opacity: 0, height: 0 }}
+   269→              animate={{ opacity: 1, height: "auto" }}
+   270→              exit={{ opacity: 0, height: 0 }}
+   271→              className="md:hidden bg-white border-b border-kaixin-100 overflow-hidden"
+   272→            >
+   273→              <div className="px-4 py-4 flex flex-col gap-1">
+   274→                {navLinks.map((l) => (
+   275→                  <a
+   276→                    key={l.href}
+   277→                    href={l.href}
+   278→                    onClick={() => setMobileOpen(false)}
+   279→                    className="px-4 py-3 text-sm font-medium text-muted-foreground hover:text-kaixin hover:bg-kaixin-50 rounded-lg transition-colors"
+   280→                  >
+   281→                    {l.label}
+   282→                  </a>
+   283→                ))}
+   284→                <Button
+   285→                  asChild
+   286→                  className="mt-2 bg-kaixin hover:bg-kaixin-dark text-white"
+   287→                >
+   288→                  <a href="#contact" onClick={() => setMobileOpen(false)}>
+   289→                    Get in Touch
+   290→                  </a>
+   291→                </Button>
+   292→              </div>
+   293→            </motion.div>
+   294→          )}
+   295→        </AnimatePresence>
+   296→      </header>
+   297→
+   298→      <main className="flex-1">
+   299→        {/* ───── HERO ───── */}
+   300→        <section className="relative overflow-hidden min-h-[100vh] flex items-center">
+   301→          {/* Background */}
+   302→          <div className="absolute inset-0 bg-gradient-to-br from-kaixin-50 via-white to-kaixin-50/30" />
+   303→          <div className="absolute top-20 right-10 w-72 h-72 md:w-[500px] md:h-[500px] bg-kaixin/10 rounded-full blur-3xl" />
+   304→          <div className="absolute bottom-10 left-10 w-60 h-60 md:w-96 md:h-96 bg-kaixin-200/20 rounded-full blur-3xl" />
+   305→          {/* Grid pattern */}
+   306→          <div
+   307→            className="absolute inset-0 opacity-[0.03]"
+   308→            style={{
+   309→              backgroundImage:
+   310→                "radial-gradient(circle, #FF6600 1px, transparent 1px)",
+   311→              backgroundSize: "30px 30px",
+   312→            }}
+   313→          />
+   314→
+   315→          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-40 w-full">
+   316→            <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+   317→              <div>
+   318→                <FadeIn>
+   319→                  <Badge
+   320→                    variant="secondary"
+   321→                    className="bg-kaixin-100/80 text-kaixin-700 border-kaixin-200 mb-6 px-4 py-1.5 text-sm font-medium backdrop-blur-sm"
+   322→                  >
+   323→                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+   324→                    Innovation-Driven Startup
+   325→                  </Badge>
+   326→                </FadeIn>
+   327→                <FadeIn delay={0.1}>
+   328→                  <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight mb-6">
+   329→                    Building the{" "}
+   330→                    <span className="gradient-text">Future</span>
+   331→                    <br />
+   332→                    with{" "}
+   333→                    <span className="relative inline-block">
+   334→                      Kaixin
+   335→                      <svg
+   336→                        className="absolute -bottom-2 left-0 w-full"
+   337→                        viewBox="0 0 200 12"
+   338→                        fill="none"
+   339→                      >
+   340→                        <path
+   341→                          d="M2 8C50 2 150 2 198 8"
+   342→                          stroke="#FF6600"
+   343→                          strokeWidth="4"
+   344→                          strokeLinecap="round"
+   345→                          opacity="0.4"
+   346→                        />
+   347→                      </svg>
+   348→                    </span>
+   349→                  </h1>
+   350→                </FadeIn>
+   351→                <FadeIn delay={0.2}>
+   352→                  <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-8 max-w-lg">
+   353→                    We create innovative technology solutions that empower
+   354→                    businesses and bring happiness to people&apos;s lives.
+   355→                    Simplifying complexity, one solution at a time.
+   356→                  </p>
+   357→                </FadeIn>
+   358→                <FadeIn delay={0.3}>
+   359→                  <div className="flex flex-wrap gap-4">
+   360→                    <Button
+   361→                      asChild
+   362→                      size="lg"
+   363→                      className="bg-kaixin hover:bg-kaixin-dark text-white shadow-lg shadow-kaixin/30 hover:shadow-kaixin/50 transition-all text-base px-8"
+   364→                    >
+   365→                      <a href="#services">
+   366→                        Explore Our Solutions
+   367→                        <ArrowRight className="ml-2 w-4 h-4" />
+   368→                      </a>
+   369→                    </Button>
+   370→                    <Button
+   371→                      asChild
+   372→                      variant="outline"
+   373→                      size="lg"
+   374→                      className="border-kaixin-200 text-kaixin hover:bg-kaixin-50 hover:text-kaixin-dark transition-all text-base px-8"
+   375→                    >
+   376→                      <a href="#about">Learn More</a>
+   377→                    </Button>
+   378→                  </div>
+   379→                </FadeIn>
+   380→                <FadeIn delay={0.4}>
+   381→                  <div className="mt-12 flex items-center gap-8">
+   382→                    <div className="flex -space-x-3">
+   383→                      {[1, 2, 3, 4].map((i) => (
+   384→                        <div
+   385→                          key={i}
+   386→                          className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-kaixin-300 to-kaixin-500 flex items-center justify-center text-white text-xs font-bold"
+   387→                        >
+   388→                          {String.fromCharCode(64 + i)}
+   389→                        </div>
+   390→                      ))}
+   391→                    </div>
+   392→                    <div>
+   393→                      <p className="text-sm font-semibold text-foreground">
+   394→                        Trusted by 200+ clients
+   395→                      </p>
+   396→                      <div className="flex items-center gap-0.5">
+   397→                        {[1, 2, 3, 4, 5].map((i) => (
+   398→                          <Star
+   399→                            key={i}
+   400→                            className="w-4 h-4 fill-kaixin text-kaixin"
+   401→                          />
+   402→                        ))}
+   403→                        <span className="ml-1.5 text-xs text-muted-foreground">
+   404→                          4.9/5 rating
+   405→                        </span>
+   406→                      </div>
+   407→                    </div>
+   408→                  </div>
+   409→                </FadeIn>
+   410→              </div>
+   411→
+   412→              {/* Hero visual */}
+   413→              <FadeIn delay={0.3} direction="right">
+   414→                <div className="relative hidden lg:block">
+   415→                  <div className="relative w-full aspect-square max-w-[520px] mx-auto">
+   416→                    {/* Floating cards */}
+   417→                    <motion.div
+   418→                      animate={{ y: [0, -12, 0] }}
+   419→                      transition={{
+   420→                        duration: 4,
+   421→                        repeat: Infinity,
+   422→                        ease: "easeInOut",
+   423→                      }}
+   424→                      className="absolute top-8 -left-4 bg-white rounded-2xl shadow-xl shadow-kaixin/10 p-4 border border-kaixin-100"
+   425→                    >
+   426→                      <div className="flex items-center gap-3">
+   427→                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-kaixin to-kaixin-dark flex items-center justify-center">
+   428→                          <Rocket className="w-5 h-5 text-white" />
+   429→                        </div>
+   430→                        <div>
+   431→                          <p className="text-sm font-semibold text-foreground">
+   432→                            Fast Delivery
+   433→                          </p>
+   434→                          <p className="text-xs text-muted-foreground">
+   435→                            2x faster
+   436→                          </p>
+   437→                        </div>
+   438→                      </div>
+   439→                    </motion.div>
+   440→
+   441→                    <motion.div
+   442→                      animate={{ y: [0, 10, 0] }}
+   443→                      transition={{
+   444→                        duration: 5,
+   445→                        repeat: Infinity,
+   446→                        ease: "easeInOut",
+   447→                        delay: 1,
+   448→                      }}
+   449→                      className="absolute top-32 -right-4 bg-white rounded-2xl shadow-xl shadow-kaixin/10 p-4 border border-kaixin-100"
+   450→                    >
+   451→                      <div className="flex items-center gap-3">
+   452→                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-kaixin-300 to-kaixin-500 flex items-center justify-center">
+   453→                          <Shield className="w-5 h-5 text-white" />
+   454→                        </div>
+   455→                        <div>
+   456→                          <p className="text-sm font-semibold text-foreground">
+   457→                            Secure
+   458→                          </p>
+   459→                          <p className="text-xs text-muted-foreground">
+   460→                            99.9% uptime
+   461→                          </p>
+   462→                        </div>
+   463→                      </div>
+   464→                    </motion.div>
+   465→
+   466→                    <motion.div
+   467→                      animate={{ y: [0, -8, 0] }}
+   468→                      transition={{
+   469→                        duration: 3.5,
+   470→                        repeat: Infinity,
+   471→                        ease: "easeInOut",
+   472→                        delay: 0.5,
+   473→                      }}
+   474→                      className="absolute bottom-24 left-8 bg-white rounded-2xl shadow-xl shadow-kaixin/10 p-4 border border-kaixin-100"
+   475→                    >
+   476→                      <div className="flex items-center gap-3">
+   477→                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-kaixin-400 to-kaixin-600 flex items-center justify-center">
+   478→                          <Zap className="w-5 h-5 text-white" />
+   479→                        </div>
+   480→                        <div>
+   481→                          <p className="text-sm font-semibold text-foreground">
+   482→                            Performance
+   483→                          </p>
+   484→                          <p className="text-xs text-muted-foreground">
+   485→                            Optimized
+   486→                          </p>
+   487→                        </div>
+   488→                      </div>
+   489→                    </motion.div>
+   490→
+   491→                    {/* Main logo showcase */}
+   492→                    <div className="absolute inset-0 flex items-center justify-center">
+   493→                      <div className="w-64 h-64 rounded-[2rem] bg-gradient-to-br from-kaixin via-kaixin-light to-kaixin-300 shadow-2xl shadow-kaixin/30 flex items-center justify-center animate-pulse-glow">
+   494→                        <Image
+   495→                          src="/logo-kaixin.png"
+   496→                          alt="Kaixin Logo"
+   497→                          width={180}
+   498→                          height={180}
+   499→                          className="rounded-[1.5rem]"
+   500→                        />
+   501→                      </div>
+   502→                    </div>
+   503→                  </div>
+   504→                </div>
+   505→              </FadeIn>
+   506→            </div>
+   507→          </div>
+   508→
+   509→          {/* Scroll indicator */}
+   510→          <motion.div
+   511→            animate={{ y: [0, 8, 0] }}
+   512→            transition={{ duration: 1.5, repeat: Infinity }}
+   513→            className="absolute bottom-8 left-1/2 -translate-x-1/2"
+   514→          >
+   515→            <div className="w-6 h-10 rounded-full border-2 border-kaixin/30 flex justify-center pt-2">
+   516→              <div className="w-1.5 h-3 rounded-full bg-kaixin" />
+   517→            </div>
+   518→          </motion.div>
+   519→        </section>
+   520→
+   521→        {/* ───── ABOUT ───── */}
+   522→        <section id="about" className="py-24 md:py-32 bg-white">
+   523→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   524→            <SectionHeading
+   525→              badge="About Us"
+   526→              title="Who We Are"
+   527→              subtitle="A passionate team driven by innovation, building technology that makes a real difference in people's lives."
+   528→            />
+   529→
+   530→            <div className="grid lg:grid-cols-2 gap-16 items-center mt-8">
+   531→              <FadeIn direction="right">
+   532→                <div className="relative">
+   533→                  <div className="bg-gradient-to-br from-kaixin-50 to-kaixin-100 rounded-3xl p-8 md:p-12">
+   534→                    <div className="grid grid-cols-2 gap-4">
+   535→                      <div className="bg-white rounded-2xl p-6 shadow-sm border border-kaixin-100">
+   536→                        <Heart className="w-8 h-8 text-kaixin mb-3" />
+   537→                        <h4 className="font-bold text-foreground text-sm mb-1">
+   538→                          Passion
+   539→                        </h4>
+   540→                        <p className="text-xs text-muted-foreground">
+   541→                          Love for what we build
+   542→                        </p>
+   543→                      </div>
+   544→                      <div className="bg-white rounded-2xl p-6 shadow-sm border border-kaixin-100 mt-8">
+   545→                        <Lightbulb className="w-8 h-8 text-kaixin mb-3" />
+   546→                        <h4 className="font-bold text-foreground text-sm mb-1">
+   547→                          Innovation
+   548→                        </h4>
+   549→                        <p className="text-xs text-muted-foreground">
+   550→                          Always pushing boundaries
+   551→                        </p>
+   552→                      </div>
+   553→                      <div className="bg-white rounded-2xl p-6 shadow-sm border border-kaixin-100">
+   554→                        <Users className="w-8 h-8 text-kaixin mb-3" />
+   555→                        <h4 className="font-bold text-foreground text-sm mb-1">
+   556→                          Community
+   557→                        </h4>
+   558→                        <p className="text-xs text-muted-foreground">
+   559→                          Together we grow
+   560→                        </p>
+   561→                      </div>
+   562→                      <div className="bg-white rounded-2xl p-6 shadow-sm border border-kaixin-100 mt-8">
+   563→                        <Target className="w-8 h-8 text-kaixin mb-3" />
+   564→                        <h4 className="font-bold text-foreground text-sm mb-1">
+   565→                          Excellence
+   566→                        </h4>
+   567→                        <p className="text-xs text-muted-foreground">
+   568→                          Quality in every detail
+   569→                        </p>
+   570→                      </div>
+   571→                    </div>
+   572→                  </div>
+   573→                  {/* Decorative */}
+   574→                  <div className="absolute -top-4 -right-4 w-24 h-24 bg-kaixin-200/30 rounded-full blur-xl" />
+   575→                  <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-kaixin-100/50 rounded-full blur-xl" />
+   576→                </div>
+   577→              </FadeIn>
+   578→
+   579→              <div className="space-y-6">
+   580→                <FadeIn delay={0.1}>
+   581→                  <div className="space-y-4">
+   582→                    <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+   583→                      Our{" "}
+   584→                      <span className="gradient-text">Mission</span>
+   585→                    </h3>
+   586→                    <p className="text-muted-foreground leading-relaxed">
+   587→                      At Kaixin, we believe that technology should serve to make
+   588→                      life simpler and more joyful. Our name means &ldquo;happy&rdquo; in
+   589→                      Chinese, and that&apos;s exactly what we aim to deliver — happiness
+   590→                      through innovation. We build products that empower businesses
+   591→                      to grow while creating delightful experiences for their users.
+   592→                    </p>
+   593→                  </div>
+   594→                </FadeIn>
+   595→                <FadeIn delay={0.2}>
+   596→                  <div className="space-y-4">
+   597→                    <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+   598→                      Our{" "}
+   599→                      <span className="gradient-text">Vision</span>
+   600→                    </h3>
+   601→                    <p className="text-muted-foreground leading-relaxed">
+   602→                      To become the leading technology partner for businesses
+   603→                      across Southeast Asia, known for our commitment to quality,
+   604→                      innovation, and customer satisfaction. We envision a future
+   605→                      where every business, regardless of size, has access to
+   606→                      world-class technology solutions.
+   607→                    </p>
+   608→                  </div>
+   609→                </FadeIn>
+   610→                <FadeIn delay={0.3}>
+   611→                  <div className="flex flex-wrap gap-3 pt-2">
+   612→                    {[
+   613→                      "Innovation First",
+   614→                      "User-Centric",
+   615→                      "Quality Driven",
+   616→                      "Community Focused",
+   617→                    ].map((item) => (
+   618→                      <div
+   619→                        key={item}
+   620→                        className="flex items-center gap-2 bg-kaixin-50 text-kaixin-700 px-4 py-2 rounded-full text-sm font-medium border border-kaixin-100"
+   621→                      >
+   622→                        <CheckCircle2 className="w-4 h-4" />
+   623→                        {item}
+   624→                      </div>
+   625→                    ))}
+   626→                  </div>
+   627→                </FadeIn>
+   628→              </div>
+   629→            </div>
+   630→          </div>
+   631→        </section>
+   632→
+   633→        {/* ───── STATS ───── */}
+   634→        <section className="py-20 bg-gradient-to-r from-kaixin to-kaixin-dark relative overflow-hidden">
+   635→          <div
+   636→            className="absolute inset-0 opacity-10"
+   637→            style={{
+   638→              backgroundImage:
+   639→                "radial-gradient(circle, white 1px, transparent 1px)",
+   640→              backgroundSize: "24px 24px",
+   641→            }}
+   642→          />
+   643→          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   644→            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+   645→              {[
+   646→                {
+   647→                  value: 200,
+   648→                  suffix: "+",
+   649→                  label: "Happy Clients",
+   650→                },
+   651→                { value: 50, suffix: "+", label: "Projects Delivered" },
+   652→                { value: 15, suffix: "+", label: "Team Members" },
+   653→                { value: 98, suffix: "%", label: "Client Satisfaction" },
+   654→              ].map((stat, i) => (
+   655→                <FadeIn key={stat.label} delay={i * 0.1}>
+   656→                  <div className="text-center">
+   657→                    <p className="text-4xl md:text-5xl font-extrabold text-white mb-2">
+   658→                      <Counter target={stat.value} suffix={stat.suffix} />
+   659→                    </p>
+   660→                    <p className="text-kaixin-100 text-sm md:text-base font-medium">
+   661→                      {stat.label}
+   662→                    </p>
+   663→                  </div>
+   664→                </FadeIn>
+   665→              ))}
+   666→            </div>
+   667→          </div>
+   668→        </section>
+   669→
+   670→        {/* ───── SERVICES ───── */}
+   671→        <section id="services" className="py-24 md:py-32 bg-gradient-to-b from-white to-kaixin-50/30">
+   672→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   673→            <SectionHeading
+   674→              badge="Our Services"
+   675→              title="What We Do"
+   676→              subtitle="We offer a comprehensive suite of technology services designed to help your business thrive in the digital era."
+   677→            />
+   678→
+   679→            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+   680→              {[
+   681→                {
+   682→                  icon: Code,
+   683→                  title: "Software Development",
+   684→                  desc: "Custom software solutions tailored to your business needs. From web applications to enterprise systems, we build with quality and scalability in mind.",
+   685→                  features: ["Web Applications", "Mobile Apps", "API Development"],
+   686→                },
+   687→                {
+   688→                  icon: Globe,
+   689→                  title: "Digital Solutions",
+   690→                  desc: "Transform your digital presence with our comprehensive digital solutions. We create engaging experiences that convert visitors into loyal customers.",
+   691→                  features: ["UI/UX Design", "Digital Strategy", "Brand Identity"],
+   692→                },
+   693→                {
+   694→                  icon: Zap,
+   695→                  title: "Cloud & DevOps",
+   696→                  desc: "Optimize your infrastructure with our cloud and DevOps expertise. We help you scale efficiently while maintaining reliability and security.",
+   697→                  features: ["Cloud Migration", "CI/CD Pipelines", "Monitoring"],
+   698→                },
+   699→                {
+   700→                  icon: Shield,
+   701→                  title: "Cybersecurity",
+   702→                  desc: "Protect your digital assets with our robust security solutions. We implement industry best practices to keep your data safe and secure.",
+   703→                  features: ["Security Audits", "Penetration Testing", "Compliance"],
+   704→                },
+   705→                {
+   706→                  icon: Lightbulb,
+   707→                  title: "AI & Machine Learning",
+   708→                  desc: "Leverage the power of artificial intelligence to automate processes, gain insights, and create intelligent experiences for your users.",
+   709→                  features: ["AI Integration", "Data Analytics", "Automation"],
+   710→                },
+   711→                {
+   712→                  icon: Users,
+   713→                  title: "IT Consulting",
+   714→                  desc: "Get expert guidance on your technology strategy. Our consultants help you make informed decisions and implement solutions that drive growth.",
+   715→                  features: ["Tech Strategy", "System Architecture", "Team Augmentation"],
+   716→                },
+   717→              ].map((service, i) => (
+   718→                <FadeIn key={service.title} delay={i * 0.1}>
+   719→                  <Card className="group h-full border-kaixin-100 hover:border-kaixin-300 bg-white hover:shadow-xl hover:shadow-kaixin/5 transition-all duration-300 hover:-translate-y-1">
+   720→                    <CardHeader>
+   721→                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-kaixin to-kaixin-dark flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-kaixin/20">
+   722→                        <service.icon className="w-7 h-7 text-white" />
+   723→                      </div>
+   724→                      <CardTitle className="text-xl font-bold text-foreground">
+   725→                        {service.title}
+   726→                      </CardTitle>
+   727→                      <CardDescription className="text-muted-foreground leading-relaxed">
+   728→                        {service.desc}
+   729→                      </CardDescription>
+   730→                    </CardHeader>
+   731→                    <CardContent>
+   732→                      <div className="flex flex-wrap gap-2">
+   733→                        {service.features.map((f) => (
+   734→                          <Badge
+   735→                            key={f}
+   736→                            variant="secondary"
+   737→                            className="bg-kaixin-50 text-kaixin-700 border-kaixin-100 text-xs"
+   738→                          >
+   739→                            {f}
+   740→                          </Badge>
+   741→                        ))}
+   742→                      </div>
+   743→                    </CardContent>
+   744→                  </Card>
+   745→                </FadeIn>
+   746→              ))}
+   747→            </div>
+   748→          </div>
+   749→        </section>
+   750→
+   751→        {/* ───── WHY CHOOSE US ───── */}
+   752→        <section className="py-24 md:py-32 bg-white">
+   753→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   754→            <SectionHeading
+   755→              badge="Why Kaixin"
+   756→              title="Why Choose Us"
+   757→              subtitle="We combine technical excellence with a genuine passion for creating solutions that make a difference."
+   758→            />
+   759→
+   760→            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+   761→              {[
+   762→                {
+   763→                  icon: Rocket,
+   764→                  title: "Rapid Development",
+   765→                  desc: "We use cutting-edge tools and methodologies to deliver projects faster without compromising quality. Your time-to-market matters to us.",
+   766→                },
+   767→                {
+   768→                  icon: Heart,
+   769→                  title: "Client-Centric Approach",
+   770→                  desc: "Every project begins with understanding your unique needs. We tailor our solutions to perfectly align with your business goals.",
+   771→                },
+   772→                {
+   773→                  icon: Shield,
+   774→                  title: "Enterprise Security",
+   775→                  desc: "Security is baked into everything we build. Our solutions follow industry best practices and comply with international standards.",
+   776→                },
+   777→                {
+   778→                  icon: Users,
+   779→                  title: "Dedicated Team",
+   780→                  desc: "Work with a team of experienced professionals who are passionate about technology and committed to your success.",
+   781→                },
+   782→                {
+   783→                  icon: Zap,
+   784→                  title: "Scalable Solutions",
+   785→                  desc: "Our solutions are built to grow with your business. From startups to enterprises, we ensure your technology scales seamlessly.",
+   786→                },
+   787→                {
+   788→                  icon: Star,
+   789→                  title: "Proven Track Record",
+   790→                  desc: "With 200+ satisfied clients and counting, we have a demonstrated history of delivering exceptional results across industries.",
+   791→                },
+   792→              ].map((item, i) => (
+   793→                <FadeIn key={item.title} delay={i * 0.08}>
+   794→                  <div className="flex gap-4 group">
+   795→                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-kaixin-50 border border-kaixin-100 flex items-center justify-center group-hover:bg-kaixin group-hover:border-kaixin transition-all duration-300">
+   796→                      <item.icon className="w-6 h-6 text-kaixin group-hover:text-white transition-colors duration-300" />
+   797→                    </div>
+   798→                    <div>
+   799→                      <h4 className="font-bold text-foreground mb-1">
+   800→                        {item.title}
+   801→                      </h4>
+   802→                      <p className="text-sm text-muted-foreground leading-relaxed">
+   803→                        {item.desc}
+   804→                      </p>
+   805→                    </div>
+   806→                  </div>
+   807→                </FadeIn>
+   808→              ))}
+   809→            </div>
+   810→          </div>
+   811→        </section>
+   812→
+   813→        {/* ───── TEAM ───── */}
+   814→        <section id="team" className="py-24 md:py-32 bg-gradient-to-b from-kaixin-50/40 to-white">
+   815→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   816→            <SectionHeading
+   817→              badge="Our Team"
+   818→              title="Meet the People Behind Kaixin"
+   819→              subtitle="A talented and dedicated team united by a common vision — to create technology that brings happiness."
+   820→            />
+   821→
+   822→            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+   823→              {/* Founder */}
+   824→              <FadeIn className="sm:col-span-2 lg:col-span-3 flex justify-center">
+   825→                <Card className="w-full max-w-md border-kaixin-100 bg-white overflow-hidden hover:shadow-xl hover:shadow-kaixin/10 transition-all duration-300">
+   826→                  <div className="h-32 bg-gradient-to-r from-kaixin to-kaixin-dark relative">
+   827→                    <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
+   828→                      <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-kaixin-200 to-kaixin-400 border-4 border-white shadow-lg flex items-center justify-center">
+   829→                        <span className="text-3xl font-bold text-white">YW</span>
+   830→                      </div>
+   831→                    </div>
+   832→                  </div>
+   833→                  <CardContent className="pt-16 pb-8 text-center">
+   834→                    <Badge className="bg-kaixin text-white mb-3 border-0">
+   835→                      Founder & CEO
+   836→                    </Badge>
+   837→                    <h3 className="text-2xl font-bold text-foreground mb-1">
+   838→                      Yovi Widianto
+   839→                    </h3>
+   840→                    <p className="text-muted-foreground text-sm mb-4">
+   841→                      Visionary leader with a passion for innovation and a mission
+   842→                      to make technology accessible to everyone. With years of
+   843→                      experience in software development and business strategy,
+   844→                      Yovi founded Kaixin to bridge the gap between technology and
+   845→                      human happiness.
+   846→                    </p>
+   847→                    <div className="flex justify-center gap-3">
+   848→                      {[
+   849→                        { icon: Linkedin, label: "LinkedIn" },
+   850→                        { icon: Twitter, label: "Twitter" },
+   851→                        { icon: Github, label: "GitHub" },
+   852→                      ].map((social) => (
+   853→                        <button
+   854→                          key={social.label}
+   855→                          aria-label={social.label}
+   856→                          className="w-10 h-10 rounded-xl bg-kaixin-50 hover:bg-kaixin border border-kaixin-100 hover:border-kaixin flex items-center justify-center transition-all"
+   857→                        >
+   858→                          <social.icon className="w-4 h-4 text-kaixin hover:text-white transition-colors" />
+   859→                        </button>
+   860→                      ))}
+   861→                    </div>
+   862→                  </CardContent>
+   863→                </Card>
+   864→              </FadeIn>
+   865→
+   866→              {/* Other team members */}
+   867→              {[
+   868→                {
+   869→                  name: "Sarah Chen",
+   870→                  role: "CTO",
+   871→                  desc: "Engineering leader with deep expertise in cloud architecture",
+   872→                },
+   873→                {
+   874→                  name: "Budi Santoso",
+   875→                  role: "Head of Design",
+   876→                  desc: "Creative mind focused on user experience and visual storytelling",
+   877→                },
+   878→              ].map((member, i) => (
+   879→                <FadeIn key={member.name} delay={i * 0.15}>
+   880→                  <Card className="border-kaixin-100 bg-white hover:shadow-lg hover:shadow-kaixin/5 transition-all duration-300 text-center">
+   881→                    <CardContent className="pt-8 pb-6">
+   882→                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-kaixin-100 to-kaixin-200 border-2 border-kaixin-100 mx-auto mb-4 flex items-center justify-center">
+   883→                        <span className="text-lg font-bold text-kaixin">
+   884→                          {member.name
+   885→                            .split(" ")
+   886→                            .map((n) => n[0])
+   887→                            .join("")}
+   888→                        </span>
+   889→                      </div>
+   890→                      <h4 className="font-bold text-foreground mb-0.5">
+   891→                        {member.name}
+   892→                      </h4>
+   893→                      <p className="text-xs text-kaixin font-medium mb-2">
+   894→                        {member.role}
+   895→                      </p>
+   896→                      <p className="text-xs text-muted-foreground">
+   897→                        {member.desc}
+   898→                      </p>
+   899→                    </CardContent>
+   900→                  </Card>
+   901→                </FadeIn>
+   902→              ))}
+   903→            </div>
+   904→          </div>
+   905→        </section>
+   906→
+   907→        {/* ───── TESTIMONIALS ───── */}
+   908→        <section className="py-24 md:py-32 bg-white">
+   909→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+   910→            <SectionHeading
+   911→              badge="Testimonials"
+   912→              title="What Our Clients Say"
+   913→              subtitle="Don't just take our word for it — hear from the businesses we've helped transform."
+   914→            />
+   915→
+   916→            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+   917→              {[
+   918→                {
+   919→                  quote:
+   920→                    "Kaixin transformed our digital presence completely. Their team understood our vision and delivered beyond expectations. Our sales increased by 150% within the first quarter.",
+   921→                  name: "Diana Putri",
+   922→                  role: "CEO, TechMart Indonesia",
+   923→                  avatar: "DP",
+   924→                },
+   925→                {
+   926→                  quote:
+   927→                    "Working with Kaixin felt like having an extension of our own team. Their technical expertise and dedication to quality is unmatched. Highly recommended!",
+   928→                  name: "Arif Rahman",
+   929→                  role: "CTO, FinanceHub",
+   930→                  avatar: "AR",
+   931→                },
+   932→                {
+   933→                  quote:
+   934→                    "The mobile app Kaixin built for us has been a game-changer. User engagement tripled and customer satisfaction scores are at an all-time high.",
+   935→                  name: "Mei Ling",
+   936→                  role: "Product Manager, GoFresh",
+   937→                  avatar: "ML",
+   938→                },
+   939→              ].map((t, i) => (
+   940→                <FadeIn key={t.name} delay={i * 0.15}>
+   941→                  <Card className="border-kaixin-100 bg-white h-full hover:shadow-lg hover:shadow-kaixin/5 transition-all duration-300">
+   942→                    <CardContent className="pt-6 pb-6">
+   943→                      <div className="flex items-center gap-1 mb-4">
+   944→                        {[1, 2, 3, 4, 5].map((s) => (
+   945→                          <Star
+   946→                            key={s}
+   947→                            className="w-4 h-4 fill-kaixin text-kaixin"
+   948→                          />
+   949→                        ))}
+   950→                      </div>
+   951→                      <p className="text-muted-foreground text-sm leading-relaxed mb-6 italic">
+   952→                        &ldquo;{t.quote}&rdquo;
+   953→                      </p>
+   954→                      <div className="flex items-center gap-3">
+   955→                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-kaixin to-kaixin-dark flex items-center justify-center">
+   956→                          <span className="text-xs font-bold text-white">
+   957→                            {t.avatar}
+   958→                          </span>
+   959→                        </div>
+   960→                        <div>
+   961→                          <p className="text-sm font-semibold text-foreground">
+   962→                            {t.name}
+   963→                          </p>
+   964→                          <p className="text-xs text-muted-foreground">
+   965→                            {t.role}
+   966→                          </p>
+   967→                        </div>
+   968→                      </div>
+   969→                    </CardContent>
+   970→                  </Card>
+   971→                </FadeIn>
+   972→              ))}
+   973→            </div>
+   974→          </div>
+   975→        </section>
+   976→
+   977→        {/* ───── CTA ───── */}
+   978→        <section className="py-24 md:py-32 relative overflow-hidden">
+   979→          <div className="absolute inset-0 bg-gradient-to-br from-kaixin to-kaixin-dark" />
+   980→          <div
+   981→            className="absolute inset-0 opacity-5"
+   982→            style={{
+   983→              backgroundImage:
+   984→                "radial-gradient(circle, white 1px, transparent 1px)",
+   985→              backgroundSize: "20px 20px",
+   986→            }}
+   987→          />
+   988→          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-kaixin-400/20 rounded-full blur-3xl" />
+   989→
+   990→          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+   991→            <FadeIn>
+   992→              <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-6 tracking-tight">
+   993→                Ready to Transform
+   994→                <br />
+   995→                Your Business?
+   996→              </h2>
+   997→            </FadeIn>
+   998→            <FadeIn delay={0.1}>
+   999→              <p className="text-kaixin-100 text-lg md:text-xl mb-10 max-w-2xl mx-auto">
+  1000→                Let&apos;s build something amazing together. Reach out to us and
+  1001→                discover how Kaixin can help your business grow.
+  1002→              </p>
+  1003→            </FadeIn>
+  1004→            <FadeIn delay={0.2}>
+  1005→              <div className="flex flex-wrap justify-center gap-4">
+  1006→                <Button
+  1007→                  asChild
+  1008→                  size="lg"
+  1009→                  className="bg-white text-kaixin hover:bg-kaixin-50 shadow-lg shadow-kaixin/30 transition-all text-base px-8 font-semibold"
+  1010→                >
+  1011→                  <a href="#contact">
+  1012→                    Start a Project
+  1013→                    <ArrowRight className="ml-2 w-4 h-4" />
+  1014→                  </a>
+  1015→                </Button>
+  1016→                <Button
+  1017→                  asChild
+  1018→                  variant="outline"
+  1019→                  size="lg"
+  1020→                  className="border-white/30 text-white hover:bg-white/10 transition-all text-base px-8"
+  1021→                >
+  1022→                  <a href="#services">View Services</a>
+  1023→                </Button>
+  1024→              </div>
+  1025→            </FadeIn>
+  1026→          </div>
+  1027→        </section>
+  1028→
+  1029→        {/* ───── CONTACT ───── */}
+  1030→        <section id="contact" className="py-24 md:py-32 bg-gradient-to-b from-white to-kaixin-50/30">
+  1031→          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  1032→            <SectionHeading
+  1033→              badge="Contact Us"
+  1034→              title="Get in Touch"
+  1035→              subtitle="Have a project in mind? We'd love to hear about it. Send us a message and we'll respond within 24 hours."
+  1036→            />
+  1037→
+  1038→            <div className="grid lg:grid-cols-5 gap-12 max-w-6xl mx-auto">
+  1039→              {/* Contact info */}
+  1040→              <FadeIn direction="left" className="lg:col-span-2">
+  1041→                <div className="space-y-8">
+  1042→                  <div>
+  1043→                    <h3 className="text-xl font-bold text-foreground mb-6">
+  1044→                      Let&apos;s Connect
+  1045→                    </h3>
+  1046→                    <p className="text-muted-foreground leading-relaxed">
+  1047→                      Whether you have a question about our services, pricing, or
+  1048→                      anything else, our team is ready to answer all your questions.
+  1049→                    </p>
+  1050→                  </div>
+  1051→
+  1052→                  <div className="space-y-5">
+  1053→                    {[
+  1054→                      {
+  1055→                        icon: Mail,
+  1056→                        label: "Email Us",
+  1057→                        value: "hello@kaixin.tech",
+  1058→                      },
+  1059→                      {
+  1060→                        icon: Phone,
+  1061→                        label: "Call Us",
+  1062→                        value: "+62 812 3456 7890",
+  1063→                      },
+  1064→                      {
+  1065→                        icon: MapPin,
+  1066→                        label: "Visit Us",
+  1067→                        value: "Jakarta, Indonesia",
+  1068→                      },
+  1069→                    ].map((item) => (
+  1070→                      <div key={item.label} className="flex items-start gap-4">
+  1071→                        <div className="w-11 h-11 rounded-xl bg-kaixin-50 border border-kaixin-100 flex items-center justify-center flex-shrink-0">
+  1072→                          <item.icon className="w-5 h-5 text-kaixin" />
+  1073→                        </div>
+  1074→                        <div>
+  1075→                          <p className="text-xs font-medium text-muted-foreground mb-0.5">
+  1076→                            {item.label}
+  1077→                          </p>
+  1078→                          <p className="text-sm font-semibold text-foreground">
+  1079→                            {item.value}
+  1080→                          </p>
+  1081→                        </div>
+  1082→                      </div>
+  1083→                    ))}
+  1084→                  </div>
+  1085→
+  1086→                  <div className="pt-4">
+  1087→                    <p className="text-xs font-medium text-muted-foreground mb-3">
+  1088→                      Follow Us
+  1089→                    </p>
+  1090→                    <div className="flex gap-3">
+  1091→                      {[
+  1092→                        { icon: Linkedin },
+  1093→                        { icon: Twitter },
+  1094→                        { icon: Github },
+  1095→                        { icon: Instagram },
+  1096→                      ].map((s, i) => (
+  1097→                        <button
+  1098→                          key={i}
+  1099→                          aria-label="Social media"
+  1100→                          className="w-10 h-10 rounded-xl bg-kaixin-50 hover:bg-kaixin border border-kaixin-100 hover:border-kaixin flex items-center justify-center transition-all"
+  1101→                        >
+  1102→                          <s.icon className="w-4 h-4 text-kaixin hover:text-white transition-colors" />
+  1103→                        </button>
+  1104→                      ))}
+  1105→                    </div>
+  1106→                  </div>
+  1107→                </div>
+  1108→              </FadeIn>
+  1109→
+  1110→              {/* Contact form */}
+  1111→              <FadeIn direction="right" className="lg:col-span-3">
+  1112→                <Card className="border-kaixin-100 bg-white shadow-lg shadow-kaixin/5">
+  1113→                  <CardContent className="p-6 md:p-8">
+  1114→                    <form onSubmit={handleSubmit} className="space-y-5">
+  1115→                      <div className="grid sm:grid-cols-2 gap-5">
+  1116→                        <div className="space-y-2">
+  1117→                          <label className="text-sm font-medium text-foreground">
+  1118→                            Full Name
+  1119→                          </label>
+  1120→                          <Input
+  1121→                            name="name"
+  1122→                            placeholder="John Doe"
+  1123→                            required
+  1124→                            className="border-kaixin-100 focus:border-kaixin focus:ring-kaixin/20"
+  1125→                          />
+  1126→                        </div>
+  1127→                        <div className="space-y-2">
+  1128→                          <label className="text-sm font-medium text-foreground">
+  1129→                            Email Address
+  1130→                          </label>
+  1131→                          <Input
+  1132→                            name="email"
+  1133→                            type="email"
+  1134→                            placeholder="john@example.com"
+  1135→                            required
+  1136→                            className="border-kaixin-100 focus:border-kaixin focus:ring-kaixin/20"
+  1137→                          />
+  1138→                        </div>
+  1139→                      </div>
+  1140→                      <div className="space-y-2">
+  1141→                        <label className="text-sm font-medium text-foreground">
+  1142→                          Subject
+  1143→                        </label>
+  1144→                        <Input
+  1145→                          name="subject"
+  1146→                          placeholder="Project inquiry"
+  1147→                          required
+  1148→                          className="border-kaixin-100 focus:border-kaixin focus:ring-kaixin/20"
+  1149→                        />
+  1150→                      </div>
+  1151→                      <div className="space-y-2">
+  1152→                        <label className="text-sm font-medium text-foreground">
+  1153→                          Message
+  1154→                        </label>
+  1155→                        <Textarea
+  1156→                          name="message"
+  1157→                          placeholder="Tell us about your project..."
+  1158→                          required
+  1159→                          rows={5}
+  1160→                          className="border-kaixin-100 focus:border-kaixin focus:ring-kaixin/20 resize-none"
+  1161→                        />
+  1162→                      </div>
+  1163→                      <Button
+  1164→                        type="submit"
+  1165→                        disabled={sending}
+  1166→                        className="w-full bg-kaixin hover:bg-kaixin-dark text-white shadow-lg shadow-kaixin/25 hover:shadow-kaixin/40 transition-all py-6 text-base font-semibold"
+  1167→                      >
+  1168→                        {sending ? (
+  1169→                          <span className="flex items-center gap-2">
+  1170→                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+  1171→                            Sending...
+  1172→                          </span>
+  1173→                        ) : (
+  1174→                          <span className="flex items-center gap-2">
+  1175→                            <Send className="w-4 h-4" />
+  1176→                            Send Message
+  1177→                          </span>
+  1178→                        )}
+  1179→                      </Button>
+  1180→                    </form>
+  1181→                  </CardContent>
+  1182→                </Card>
+  1183→              </FadeIn>
+  1184→            </div>
+  1185→          </div>
+  1186→        </section>
+  1187→      </main>
+  1188→
+  1189→      {/* ───── FOOTER ───── */}
+  1190→      <footer className="bg-foreground text-white relative overflow-hidden">
+  1191→        <div className="absolute inset-0 opacity-5">
+  1192→          <div className="absolute top-0 left-0 w-96 h-96 bg-kaixin rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+  1193→          <div className="absolute bottom-0 right-0 w-96 h-96 bg-kaixin rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+  1194→        </div>
+  1195→
+  1196→        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  1197→          <div className="py-16 grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
+  1198→            {/* Brand */}
+  1199→            <div className="col-span-2 md:col-span-1">
+  1200→              <div className="flex items-center gap-3 mb-4">
+  1201→                <Image
+  1202→                  src="/logo-kaixin.png"
+  1203→                  alt="Kaixin Logo"
+  1204→                  width={36}
+  1205→                  height={36}
+  1206→                  className="rounded-lg"
+  1207→                />
+  1208→                <span className="text-xl font-bold">
+  1209→                  <span className="text-white">Kai</span>
+  1210→                  <span className="text-kaixin">xin</span>
+  1211→                </span>
+  1212→              </div>
+  1213→              <p className="text-sm text-white/60 leading-relaxed max-w-xs">
+  1214→                Innovation that brings happiness. Building technology solutions
+  1215→                that empower businesses and delight users.
+  1216→              </p>
+  1217→              <div className="flex gap-3 mt-6">
+  1218→                {[Linkedin, Twitter, Github, Instagram].map((Icon, i) => (
+  1219→                  <button
+  1220→                    key={i}
+  1221→                    aria-label="Social media"
+  1222→                    className="w-9 h-9 rounded-lg bg-white/10 hover:bg-kaixin flex items-center justify-center transition-all"
+  1223→                  >
+  1224→                    <Icon className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
+  1225→                  </button>
+  1226→                ))}
+  1227→              </div>
+  1228→            </div>
+  1229→
+  1230→            {/* Links */}
+  1231→            <div>
+  1232→              <h4 className="font-semibold text-sm mb-4 text-white">Company</h4>
+  1233→              <ul className="space-y-3">
+  1234→                {["About", "Services", "Team", "Contact"].map((l) => (
+  1235→                  <li key={l}>
+  1236→                    <a
+  1237→                      href={`#${l.toLowerCase()}`}
+  1238→                      className="text-sm text-white/60 hover:text-kaixin transition-colors"
+  1239→                    >
+  1240→                      {l}
+  1241→                    </a>
+  1242→                  </li>
+  1243→                ))}
+  1244→              </ul>
+  1245→            </div>
+  1246→
+  1247→            <div>
+  1248→              <h4 className="font-semibold text-sm mb-4 text-white">Services</h4>
+  1249→              <ul className="space-y-3">
+  1250→                {[
+  1251→                  "Software Development",
+  1252→                  "Digital Solutions",
+  1253→                  "Cloud & DevOps",
+  1254→                  "AI & ML",
+  1255→                ].map((s) => (
+  1256→                  <li key={s}>
+  1257→                    <a
+  1258→                      href="#services"
+  1259→                      className="text-sm text-white/60 hover:text-kaixin transition-colors"
+  1260→                    >
+  1261→                      {s}
+  1262→                    </a>
+  1263→                  </li>
+  1264→                ))}
+  1265→              </ul>
+  1266→            </div>
+  1267→
+  1268→            <div>
+  1269→              <h4 className="font-semibold text-sm mb-4 text-white">Contact</h4>
+  1270→              <ul className="space-y-3">
+  1271→                <li className="flex items-center gap-2 text-sm text-white/60">
+  1272→                  <Mail className="w-4 h-4 text-kaixin" />
+  1273→                  hello@kaixin.tech
+  1274→                </li>
+  1275→                <li className="flex items-center gap-2 text-sm text-white/60">
+  1276→                  <Phone className="w-4 h-4 text-kaixin" />
+  1277→                  +62 812 3456 7890
+  1278→                </li>
+  1279→                <li className="flex items-center gap-2 text-sm text-white/60">
+  1280→                  <MapPin className="w-4 h-4 text-kaixin" />
+  1281→                  Jakarta, Indonesia
+  1282→                </li>
+  1283→              </ul>
+  1284→            </div>
+  1285→          </div>
+  1286→
+  1287→          {/* Bottom bar */}
+  1288→          <div className="border-t border-white/10 py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+  1289→            <p className="text-sm text-white/50">
+  1290→              &copy; {new Date().getFullYear()} Kaixin. All rights reserved.
+  1291→            </p>
+  1292→            <div className="flex gap-6">
+  1293→              {["Privacy Policy", "Terms of Service", "Cookie Policy"].map(
+  1294→                (p) => (
+  1295→                  <a
+  1296→                    key={p}
+  1297→                    href="#"
+  1298→                    className="text-xs text-white/50 hover:text-white/80 transition-colors"
+  1299→                  >
+  1300→                    {p}
+  1301→                  </a>
+  1302→                )
+  1303→              )}
+  1304→            </div>
+  1305→          </div>
+  1306→        </div>
+  1307→      </footer>
+  1308→
+  1309→      {/* ───── BACK TO TOP ───── */}
+  1310→      <AnimatePresence>
+  1311→        {showTop && (
+  1312→          <motion.button
+  1313→            initial={{ opacity: 0, scale: 0.8 }}
+  1314→            animate={{ opacity: 1, scale: 1 }}
+  1315→            exit={{ opacity: 0, scale: 0.8 }}
+  1316→            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+  1317→            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-xl bg-kaixin text-white shadow-lg shadow-kaixin/30 hover:shadow-kaixin/50 flex items-center justify-center hover:bg-kaixin-dark transition-all"
+  1318→            aria-label="Back to top"
+  1319→          >
+  1320→            <ChevronUp className="w-5 h-5" />
+  1321→          </motion.button>
+  1322→        )}
+  1323→      </AnimatePresence>
+  1324→    </div>
+  1325→  );
+  1326→}
+  1327→

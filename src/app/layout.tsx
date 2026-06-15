@@ -14,34 +14,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kaixin - Innovation That Brings Happiness",
+  title: "Kaixin — We build things that matter.",
   description:
-    "Kaixin is a modern technology startup founded by Yovi Widianto, dedicated to creating innovative solutions that bring joy and simplicity to people's lives through cutting-edge technology.",
-  keywords: [
-    "Kaixin",
-    "startup",
-    "technology",
-    "innovation",
-    "Yovi Widianto",
-    "digital solutions",
-    "software development",
-  ],
+    "Kaixin is a technology studio founded by Yovi Widianto. We design, engineer, and ship digital products that people actually want to use.",
+  keywords: ["Kaixin", "startup", "technology", "Yovi Widianto", "digital products", "design studio"],
   authors: [{ name: "Yovi Widianto" }],
-  icons: {
-    icon: "/logo-kaixin.png",
-  },
+  icons: { icon: "/logo-kaixin.png" },
   openGraph: {
-    title: "Kaixin - Innovation That Brings Happiness",
-    description:
-      "Kaixin is a modern technology startup dedicated to creating innovative solutions that bring joy and simplicity to people's lives.",
+    title: "Kaixin — We build things that matter.",
+    description: "A technology studio by Yovi Widianto.",
     type: "website",
     images: ["/logo-kaixin.png"],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Kaixin - Innovation That Brings Happiness",
-    description:
-      "A modern technology startup dedicated to creating innovative solutions.",
   },
 };
 
@@ -53,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}
       >
         {children}
         <Toaster />
