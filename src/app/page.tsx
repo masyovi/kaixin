@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import {
   ArrowUpRight,
-  ArrowDownRight,
   Menu,
   X,
   Mail,
   MapPin,
   Send,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,27 +17,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 
-/* ──────── utilities ──────── */
+/* ═══════════════ HELPERS ═══════════════ */
 
-function Up({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+function In({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   const r = useRef(null);
-  const v = useInView(r, { once: true, margin: "-60px" });
+  const v = useInView(r, { once: true, margin: "-50px" });
   return (
-    <motion.div ref={r} initial={{ opacity: 0, y: 32 }} animate={v ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }} className={className}>
+    <motion.div ref={r} initial={{ opacity: 0, y: 24 }} animate={v ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5, delay, ease: "easeOut" }} className={className}>
       {children}
     </motion.div>
-  );
-}
-
-function Clip({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  const r = useRef(null);
-  const v = useInView(r, { once: true, margin: "-40px" });
-  return (
-    <div ref={r} className="overflow-hidden">
-      <motion.div initial={{ y: "100%" }} animate={v ? { y: 0 } : {}} transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}>
-        {children}
-      </motion.div>
-    </div>
   );
 }
 
@@ -48,85 +36,63 @@ function Count({ target, s = "" }: { target: number; s?: string }) {
   useEffect(() => {
     if (!v) return;
     let c = 0;
-    const step = target / 60;
-    const t = setInterval(() => { c += step; if (c >= target) { setN(target); clearInterval(t); } else setN(Math.floor(c)); }, 25);
+    const step = target / 50;
+    const t = setInterval(() => { c += step; if (c >= target) { setN(target); clearInterval(t); } else setN(Math.floor(c)); }, 30);
     return () => clearInterval(t);
   }, [v, target]);
   return <span ref={r}>{n.toLocaleString()}{s}</span>;
 }
 
-/* ──────── marquee ──────── */
-
-const ticker = ["Product Design", "Web Apps", "Brand Systems", "Cloud Infra", "AI Products", "Mobile", "Strategy", "DevOps", "Rapid Prototyping"];
-
-function Ticker() {
-  const all = [...ticker, ...ticker];
+/* ═══════════════ STICKER / STAMP ═══════════════ */
+function Stamp({ children, color = "bg-kaixin text-white", rotate = -3 }: { children: React.ReactNode; color?: string; rotate?: number }) {
   return (
-    <div className="relative overflow-hidden border-t border-b border-ink/[0.08] py-4 select-none">
-      <div className="animate-marquee flex whitespace-nowrap">
-        {all.map((t, i) => (
-          <span key={i} className="flex items-center gap-6 mx-6 text-[13px] font-medium tracking-wide text-ink-light">
-            {t}
-            <span className="w-1.5 h-1.5 rounded-full bg-kaixin/60" />
-          </span>
-        ))}
+    <span className={`inline-block ${color} font-mono text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 border-2 border-foreground shadow-[3px_3px_0_0_#111]`} style={{ transform: `rotate(${rotate}deg)` }}>
+      {children}
+    </span>
+  );
+}
+
+/* ═══════════════ BLOCK (brutalist card) ═══════════════ */
+function Block({ children, className = "", hover = true, bg = "bg-white" }: { children: React.ReactNode; className?: string; hover?: boolean; bg?: string }) {
+  return (
+    <div className={`${bg} border-2 border-foreground p-6 md:p-8 shadow-[4px_4px_0_0_#111] ${hover ? "hover:shadow-[6px_6px_0_0_#111] hover:-translate-y-1 transition-all duration-200" : ""} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/* ═══════════════ MARQUEE ═══════════════ */
+const marqueeL = ["DESIGN", "ENGINEER", "SHIP", "ITERATE", "DESIGN", "ENGINEER", "SHIP", "ITERATE"];
+const marqueeR = ["REACT", "NEXT.JS", "AI/ML", "CLOUD", "MOBILE", "BRAND", "DEVOPS", "STRATEGY"];
+
+function DualMarquee() {
+  return (
+    <div className="border-y-2 border-foreground bg-kaixin text-white overflow-hidden select-none">
+      <div className="py-3 border-b border-white/20">
+        <div className="marquee-l flex whitespace-nowrap">
+          {[...marqueeL, ...marqueeL].map((t, i) => (
+            <span key={i} className="mx-6 text-sm font-bold tracking-[0.2em]">{t}<span className="ml-6 text-white/40">✦</span></span>
+          ))}
+        </div>
+      </div>
+      <div className="py-3 bg-white text-foreground">
+        <div className="marquee-r flex whitespace-nowrap">
+          {[...marqueeR, ...marqueeR].map((t, i) => (
+            <span key={i} className="mx-6 text-sm font-bold tracking-[0.2em]">{t}<span className="ml-6 text-ink-faint">◆</span></span>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
-/* ──────── horizontal projects ──────── */
-
-const projects = [
-  { tag: "Fintech", title: "Rebuilt the entire lending platform for 2M+ users", year: "2024" },
-  { tag: "Healthcare", title: "Telemedicine app that handles 50K sessions monthly", year: "2024" },
-  { tag: "E-Commerce", title: "Custom checkout that increased conversion by 34%", year: "2024" },
-  { tag: "SaaS", title: "Analytics dashboard used by 400+ enterprise teams", year: "2023" },
-  { tag: "Education", title: "LMS that went from 0 to 120K students in 8 months", year: "2023" },
-];
-
-function Projects() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  return (
-    <section className="py-20 md:py-28 overflow-hidden">
-      <Up className="max-w-[1400px] mx-auto px-6 md:px-10 mb-10 md:mb-14">
-        <p className="text-[13px] font-mono text-ink-faint tracking-wider uppercase mb-3">Selected work</p>
-        <h2 className="text-3xl md:text-[2.8rem] font-bold tracking-tight">Things we shipped<span className="text-kaixin">.</span></h2>
-      </Up>
-      <div ref={scrollRef} className="flex gap-4 md:gap-5 overflow-x-auto px-6 md:px-10 pb-4 snap-x snap-mandatory scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {projects.map((p, i) => (
-          <Up key={i} delay={i * 0.08} className="flex-shrink-0 w-[280px] md:w-[360px] snap-start">
-            <div className="group h-full rounded-2xl border border-ink/[0.07] bg-white p-7 md:p-8 flex flex-col justify-between hover-lift cursor-pointer">
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-[12px] font-mono text-kaixin bg-kaixin/[0.08] px-2.5 py-1 rounded-md">{p.tag}</span>
-                  <span className="text-[12px] font-mono text-ink-faint">{p.year}</span>
-                </div>
-                <p className="text-[17px] font-semibold leading-snug">{p.title}</p>
-              </div>
-              <div className="mt-6 flex items-center gap-1.5 text-ink-light group-hover:text-kaixin group-hover:gap-2.5 transition-all text-[14px]">
-                <span>View case</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </div>
-            </div>
-          </Up>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ──────── page ──────── */
+/* ═══════════════ PAGE ═══════════════ */
 
 export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [showTop, setShowTop] = useState(false);
   const { toast } = useToast();
-
-  const heroRef = useRef(null);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
 
   useEffect(() => {
     const h = () => setShowTop(window.scrollY > 600);
@@ -139,400 +105,426 @@ export default function Page() {
     setSending(true);
     const fd = new FormData(e.currentTarget);
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: fd.get("name"), email: fd.get("email"), subject: fd.get("subject"), message: fd.get("message") }),
-      });
+      const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: fd.get("name"), email: fd.get("email"), subject: fd.get("subject"), message: fd.get("message") }) });
       if (!res.ok) throw new Error();
-      toast({ title: "Sent.", description: "We'll reply within 24 hours." });
+      toast({ title: "Sent ✓", description: "We'll reply within a day." });
       e.currentTarget.reset();
-    } catch {
-      toast({ title: "Oops.", description: "Something broke. Try again.", variant: "destructive" });
-    } finally { setSending(false); }
+    } catch { toast({ title: "Error", description: "Try again.", variant: "destructive" }); }
+    finally { setSending(false); }
   };
 
+  const services = [
+    { num: "01", title: "Product Design", desc: "Figma → Prototype → Handoff. We don't just draw screens — we design flows that actually work.", tools: ["Figma", "Prototyping", "Design Systems"] },
+    { num: "02", title: "Web Engineering", desc: "React, Next.js, TypeScript. Performance-first. No 20MB bundles allowed.", tools: ["React", "Next.js", "TypeScript"] },
+    { num: "03", title: "AI Integration", desc: "LLMs, RAG, NLP. We build AI features that feel useful, not forced.", tools: ["OpenAI", "LangChain", "Python"] },
+    { num: "04", title: "Cloud & Infra", desc: "AWS, Docker, K8s. Infrastructure that doesn't wake you up at 3AM.", tools: ["AWS", "Terraform", "Kubernetes"] },
+    { num: "05", title: "Mobile Apps", desc: "Native or cross-platform. We know when to pick which.", tools: ["Swift", "Kotlin", "React Native"] },
+    { num: "06", title: "Brand Identity", desc: "Logo, type, color, motion. The DNA of how people recognize you.", tools: ["Strategy", "Visual ID", "Motion"] },
+  ];
+
+  const projects = [
+    { tag: "FINTECH", title: "Lending platform rebuilt for 2M+ users", year: "24" },
+    { tag: "HEALTH", title: "Telemedicine handling 50K monthly sessions", year: "24" },
+    { tag: "ECOM", title: "Checkout flow — +34% conversion overnight", year: "24" },
+    { tag: "SaaS", title: "Analytics dashboard for 400+ enterprise teams", year: "23" },
+  ];
+
+  const team = [
+    { name: "Yovi Widianto", role: "FOUNDER", initials: "YW", founder: true },
+    { name: "Sarah Chen", role: "CTO", initials: "SC", founder: false },
+    { name: "Budi Santoso", role: "DESIGN", initials: "BS", founder: false },
+    { name: "Linda Kusuma", role: "ENG LEAD", initials: "LK", founder: false },
+    { name: "Reza Pratama", role: "PRODUCT", initials: "RP", founder: false },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col bg-surface">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* ═══ NAV ═══ */}
-      <header className="fixed top-0 inset-x-0 z-50">
-        <nav className="max-w-[1400px] mx-auto px-6 md:px-10 flex items-center justify-between h-16 md:h-20">
-          <a href="#" className="relative z-10 flex items-center gap-2.5 group">
-            <Image src="/logo-kaixin.png" alt="" width={28} height={28} className="rounded-lg" />
-            <span className="text-[15px] font-bold tracking-tight text-white mix-blend-difference">kaixin</span>
+      <header className="fixed top-0 inset-x-0 z-50 bg-background border-b-2 border-foreground">
+        <nav className="max-w-[1400px] mx-auto px-6 md:px-10 flex items-center justify-between h-16">
+          <a href="#" className="flex items-center gap-2.5">
+            <Image src="/logo-kaixin.png" alt="" width={28} height={28} className="rounded border border-foreground" />
+            <span className="text-[16px] font-extrabold tracking-tight uppercase">Kaixin</span>
           </a>
           <div className="hidden md:flex items-center gap-1">
             {["Work", "About", "Team", "Contact"].map((n) => (
-              <a key={n} href={`#${n.toLowerCase()}`} className="px-3.5 py-2 text-[13px] font-medium text-white/70 hover:text-white rounded-md hover:bg-white/10 transition-colors mix-blend-difference">{n}</a>
+              <a key={n} href={`#${n.toLowerCase()}`} className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-wider hover:bg-foreground hover:text-white transition-colors border-2 border-transparent hover:border-foreground">{n}</a>
             ))}
           </div>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden z-10 w-10 h-10 flex items-center justify-center text-white mix-blend-difference" aria-label="Menu">
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden w-10 h-10 flex items-center justify-center border-2 border-foreground bg-white hover:bg-foreground hover:text-white transition-colors" aria-label="Menu">
+            {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </nav>
       </header>
 
-      {/* mobile overlay */}
-      <div className={`fixed inset-0 z-40 bg-ink flex flex-col items-center justify-center gap-8 transition-all duration-500 ${menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
+      {/* Mobile menu */}
+      <div className={`fixed inset-0 z-40 bg-kaixin flex flex-col items-center justify-center gap-6 transition-all duration-400 border-2 border-foreground md:hidden ${menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
         {["Work", "About", "Team", "Contact"].map((n) => (
-          <a key={n} href={`#${n.toLowerCase()}`} onClick={() => setMenuOpen(false)} className="text-4xl font-extrabold text-white/90 hover:text-kaixin transition-colors tracking-tight">{n}</a>
+          <a key={n} href={`#${n.toLowerCase()}`} onClick={() => setMenuOpen(false)} className="text-3xl font-extrabold uppercase text-white tracking-wider hover:underline">{n}</a>
         ))}
       </div>
 
       <main className="flex-1">
 
         {/* ═══ HERO ═══ */}
-        <section ref={heroRef} className="relative overflow-hidden bg-ink min-h-[100dvh] flex items-center">
-          <motion.div className="absolute inset-0" style={{ y: heroY }}>
-            <div className="absolute top-[20%] left-[15%] w-[500px] h-[500px] rounded-full bg-kaixin/[0.06] blur-[100px]" />
-            <div className="absolute bottom-[10%] right-[10%] w-[300px] h-[300px] rounded-full bg-kaixin/[0.03] blur-[80px]" />
-          </motion.div>
+        <section className="relative min-h-[92dvh] flex items-center border-b-2 border-foreground">
+          {/* Background pattern */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "repeating-linear-gradient(0deg, #111 0, #111 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, #111 0, #111 1px, transparent 1px, transparent 40px)" }} />
 
-          {/* Giant K background */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-            <span className="text-[clamp(20rem,50vw,42rem)] font-extrabold text-white/[0.03] leading-none tracking-tighter">K</span>
-          </div>
+          <div className="relative max-w-[1400px] mx-auto px-6 md:px-10 pt-28 pb-20 w-full">
+            <div className="grid md:grid-cols-12 gap-8 md:gap-6 items-end">
+              <div className="md:col-span-8">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+                  <div className="flex flex-wrap items-center gap-3 mb-8">
+                    <Stamp color="bg-kaixin text-white" rotate={-2}>Est. 2024</Stamp>
+                    <Stamp color="bg-white text-foreground" rotate={1}>Jakarta, ID</Stamp>
+                  </div>
+                </motion.div>
 
-          {/* diagonal line accent */}
-          <div className="absolute top-0 right-[20%] w-px h-[40vh] bg-gradient-to-b from-transparent via-white/[0.06] to-transparent" />
-
-          <div className="relative max-w-[1400px] mx-auto px-6 md:px-10 pt-32 pb-24 md:pb-40 w-full">
-            <div className="max-w-3xl">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="mb-8">
-                <span className="inline-flex items-center gap-2 text-[13px] font-mono text-white/40 tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-kaixin" />
-                  Jakarta, ID
-                </span>
-              </motion.div>
-
-              <Clip delay={0.1}>
-                <h1 className="text-[clamp(2.8rem,8vw,7.5rem)] font-extrabold leading-[0.88] tracking-[-0.04em] text-white">
-                  We make<br />
-                  things that<br />
+                <motion.h1
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+                  className="text-[clamp(2.5rem,7.5vw,6.5rem)] font-extrabold leading-[0.9] tracking-[-0.03em] uppercase"
+                >
+                  We don&rsquo;t
+                  <br />
+                  do boring
+                  <br />
                   <span className="relative inline-block">
-                    <span className="text-kaixin">matter</span>
-                    <span className="absolute -bottom-2 left-0 w-full h-3 bg-kaixin/20 -skew-x-3 rounded" />
+                    <span className="bg-kaixin text-white px-3 -rotate-1 inline-block">software</span>
                   </span>
                   <span className="text-kaixin">.</span>
-                </h1>
-              </Clip>
+                </motion.h1>
 
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }} className="mt-10 md:mt-14 flex flex-col sm:flex-row sm:items-end gap-8 sm:gap-16">
-                <p className="text-white/40 text-[15px] leading-[1.8] max-w-sm">
-                  A small studio in Jakarta that designs, engineers, and ships digital products people actually enjoy using.
-                </p>
-                <a href="#work" className="group inline-flex items-center gap-2 text-[14px] font-semibold text-kaixin hover:gap-3 transition-all">
-                  Scroll down
-                  <ArrowDownRight className="w-4 h-4 group-hover:translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
-                </a>
-              </motion.div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-10 flex flex-col sm:flex-row gap-4 sm:gap-8 items-start sm:items-end">
+                  <p className="text-[15px] leading-relaxed max-w-sm text-foreground/70">
+                    Small studio. Big standards. We build digital products that don&rsquo;t suck — founded by Yovi Widianto.
+                  </p>
+                  <a href="#work" className="inline-flex items-center gap-2 bg-foreground text-white px-5 py-3 font-bold text-[13px] uppercase tracking-wider border-2 border-foreground hover:bg-kaixin transition-colors shadow-[4px_4px_0_0_#FF6600]">
+                    See Work
+                    <ArrowUpRight className="w-4 h-4" />
+                  </a>
+                </motion.div>
+              </div>
+
+              {/* Side block */}
+              <div className="md:col-span-4">
+                <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+                  <Block hover={false} className="bg-kaixin border-foreground shadow-[4px_4px_0_0_#111]">
+                    <p className="font-mono text-[11px] uppercase tracking-widest text-white/60 mb-4">The short version</p>
+                    <div className="space-y-3 text-white">
+                      <div className="flex justify-between border-b border-white/20 pb-2">
+                        <span className="font-bold text-[13px] uppercase">Projects</span>
+                        <span className="font-mono text-[13px]">200+</span>
+                      </div>
+                      <div className="flex justify-between border-b border-white/20 pb-2">
+                        <span className="font-bold text-[13px] uppercase">Retention</span>
+                        <span className="font-mono text-[13px]">98%</span>
+                      </div>
+                      <div className="flex justify-between border-b border-white/20 pb-2">
+                        <span className="font-bold text-[13px] uppercase">Team</span>
+                        <span className="font-mono text-[13px]">15</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-bold text-[13px] uppercase">Rating</span>
+                        <span className="font-mono text-[13px]">4.9/5</span>
+                      </div>
+                    </div>
+                  </Block>
+                </motion.div>
+              </div>
             </div>
           </div>
         </section>
 
-        <Ticker />
+        <DualMarquee />
 
-        {/* ═══ WORK ═══ */}
-        <section id="work" className="py-20 md:py-32">
+        {/* ═══ SERVICES ═══ */}
+        <section id="work" className="py-20 md:py-28">
           <div className="max-w-[1400px] mx-auto px-6 md:px-10">
-            <Up>
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-14 md:mb-20">
+            <In className="mb-14 md:mb-20">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                  <p className="text-[13px] font-mono text-ink-faint tracking-wider uppercase mb-3">01 — Capabilities</p>
-                  <h2 className="text-3xl md:text-[3.2rem] font-bold tracking-tight leading-[1.05] max-w-lg">
-                    We keep it focused.<br />Six things, done well.
+                  <Stamp color="bg-kaixin text-white" rotate={-2}>What we do</Stamp>
+                  <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5">
+                    Six things.
+                    <br />
+                    <span className="text-foreground/40">No more, no less.</span>
                   </h2>
                 </div>
-                <p className="text-ink-light text-[15px] max-w-[260px] leading-relaxed">No &ldquo;full-service agency&rdquo; fluff. We do what we&rsquo;re great at.</p>
               </div>
-            </Up>
+            </In>
 
-            {/* Asymmetric list — NOT a grid */}
-            <div className="space-y-0 divide-y divide-ink/[0.06]">
-              {[
-                { num: "01", title: "Product Design & Engineering", desc: "End-to-end. Research → design → code → ship. We don't hand off.", tags: ["React", "Next.js", "TypeScript", "Tailwind", "Figma"] },
-                { num: "02", title: "AI & Machine Learning", desc: "LLM integration, NLP pipelines, computer vision. Useful, not gimmicky.", tags: ["Python", "LangChain", "OpenAI", "RAG"] },
-                { num: "03", title: "Cloud & Infrastructure", desc: "AWS, GCP, Docker, Kubernetes. Systems that don't break at 3 AM.", tags: ["AWS", "Docker", "Terraform", "K8s"] },
-                { num: "04", title: "Mobile Development", desc: "Native when it matters. React Native when it doesn't. We know the difference.", tags: ["Swift", "Kotlin", "React Native", "Flutter"] },
-                { num: "05", title: "Brand & Identity", desc: "Logo, type, color, motion. The stuff that makes people recognize you instantly.", tags: ["Brand Strategy", "Visual Identity", "Motion Design"] },
-                { num: "06", title: "Technical Consulting", desc: "Architecture reviews, tech audits, team mentoring. We've seen the pitfalls.", tags: ["Architecture", "Code Review", "CTO-as-a-Service"] },
-              ].map((item, i) => (
-                <Up key={item.num} delay={i * 0.06}>
-                  <div className="group py-7 md:py-9 flex flex-col md:flex-row md:items-center gap-4 md:gap-8 cursor-pointer hover:bg-ink/[0.02] -mx-3 px-3 md:-mx-6 md:px-6 rounded-xl transition-colors">
-                    <span className="text-[13px] font-mono text-ink-faint md:w-12 flex-shrink-0">{item.num}</span>
-                    <h3 className="text-lg md:text-[22px] font-bold tracking-tight md:w-72 flex-shrink-0 group-hover:text-kaixin transition-colors">{item.title}</h3>
-                    <p className="text-ink-light text-[14px] leading-relaxed md:flex-1">{item.desc}</p>
-                    <div className="hidden md:flex flex-wrap gap-1.5 flex-shrink-0">
-                      {item.tags.slice(0, 3).map((t) => (
-                        <span key={t} className="text-[11px] font-mono text-ink-faint bg-surface px-2 py-0.5 rounded">{t}</span>
+            {/* Stacked blocks — brutalist style */}
+            <div className="grid md:grid-cols-2 gap-4">
+              {services.map((s, i) => (
+                <In key={s.num} delay={i * 0.06}>
+                  <Block className="group cursor-pointer h-full">
+                    <div className="flex items-start justify-between mb-5">
+                      <span className="font-mono text-[13px] font-bold text-foreground/30">{s.num}</span>
+                      <ExternalLink className="w-4 h-4 text-foreground/20 group-hover:text-kaixin transition-colors" />
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-extrabold uppercase tracking-tight mb-3 group-hover:text-kaixin transition-colors">{s.title}</h3>
+                    <p className="text-[14px] leading-relaxed text-foreground/60 mb-6">{s.desc}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {s.tools.map((t) => (
+                        <span key={t} className="font-mono text-[11px] uppercase tracking-wider bg-background border border-foreground px-2.5 py-1">{t}</span>
                       ))}
                     </div>
-                    <ArrowUpRight className="w-4 h-4 text-ink-faint group-hover:text-kaixin group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all flex-shrink-0 hidden md:block" />
-                  </div>
-                </Up>
+                  </Block>
+                </In>
               ))}
             </div>
           </div>
         </section>
 
         {/* ═══ PROJECTS ═══ */}
-        <Projects />
+        <section className="py-20 md:py-28 bg-foreground text-white border-y-2 border-foreground">
+          <div className="max-w-[1400px] mx-auto px-6 md:px-10">
+            <In className="mb-14">
+              <Stamp color="bg-white text-foreground border-white" rotate={2}>Selected</Stamp>
+              <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5 text-white">
+                Things we shipped<span className="text-kaixin">.</span>
+              </h2>
+            </In>
 
-        {/* ═══ MANIFESTO ═══ */}
-        <section className="relative overflow-hidden bg-ink">
-          <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-28 md:py-40 relative">
-            {/* Giant quote mark */}
-            <span className="absolute top-12 left-6 md:left-10 text-[12rem] md:text-[18rem] leading-none font-serif text-white/[0.03] select-none">&ldquo;</span>
-
-            <Up>
-              <p className="text-[13px] font-mono text-white/30 tracking-wider uppercase mb-12 relative">02 — Manifesto</p>
-            </Up>
-            <Up delay={0.1}>
-              <blockquote className="relative max-w-4xl text-[clamp(1.5rem,3.5vw,2.6rem)] font-bold leading-[1.25] tracking-tight text-white">
-                Technology should be invisible. The <span className="rough-underline text-kaixin">experience</span> is all that matters. We build things that work so well, people don&rsquo;t think about what&rsquo;s behind them.
-              </blockquote>
-            </Up>
-            <Up delay={0.25} className="mt-14 flex items-center gap-4 relative">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-kaixin to-kaixin-dark flex items-center justify-center text-white text-[12px] font-bold shadow-lg shadow-kaixin/20">YW</div>
-              <div>
-                <p className="text-white text-[15px] font-semibold">Yovi Widianto</p>
-                <p className="text-white/35 text-[13px]">Founder</p>
-              </div>
-            </Up>
-
-            {/* Diagonal accent */}
-            <div className="absolute bottom-0 right-0 w-40 h-40 bg-kaixin/[0.04] rounded-full blur-3xl" />
+            <div className="grid md:grid-cols-2 gap-4">
+              {projects.map((p, i) => (
+                <In key={i} delay={i * 0.08}>
+                  <Block hover={true} bg="bg-foreground" className="border-white group cursor-pointer">
+                    <div className="flex items-start justify-between mb-6">
+                      <span className="font-mono text-[11px] font-bold text-kaixin bg-kaixin/20 px-2 py-1">{p.tag}</span>
+                      <span className="font-mono text-[12px] text-white/40">{p.year}</span>
+                    </div>
+                    <p className="text-lg md:text-xl font-bold uppercase leading-snug text-white mb-5">{p.title}</p>
+                    <div className="flex items-center gap-2 text-white/50 group-hover:text-kaixin group-hover:gap-3 transition-all text-[13px] font-bold uppercase tracking-wider">
+                      <span>Case study</span>
+                      <ArrowUpRight className="w-4 h-4" />
+                    </div>
+                  </Block>
+                </In>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* ═══ ABOUT ═══ */}
-        <section id="about" className="py-24 md:py-36">
+        <section id="about" className="py-20 md:py-28">
           <div className="max-w-[1400px] mx-auto px-6 md:px-10">
-            <div className="grid md:grid-cols-12 gap-10 md:gap-0 items-start">
-              {/* Left — huge text */}
-              <div className="md:col-span-7 md:pr-16">
-                <Up>
-                  <p className="text-[13px] font-mono text-ink-faint tracking-wider uppercase mb-4">03 — About</p>
-                </Up>
-                <Clip>
-                  <h2 className="text-4xl md:text-[4.5rem] font-extrabold tracking-tight leading-[0.95] mb-10">
-                    Small team.<span className="text-ink-light">.<br /></span>
-                    Outsized output<span className="text-ink-light">.</span>
+            <div className="grid md:grid-cols-12 gap-6">
+              <div className="md:col-span-7">
+                <In>
+                  <Stamp color="bg-kaixin text-white" rotate={-3}>About</Stamp>
+                  <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5 leading-[1.05]">
+                    Small team.
+                    <br />
+                    No BS<span className="text-foreground/30">.</span>
                   </h2>
-                </Clip>
-                <Up delay={0.15}>
-                  <div className="space-y-6 text-[15px] leading-[1.85] text-ink-light max-w-lg">
-                    <p>
-                      Kaixin started with a frustration: why do talented teams keep building mediocre products? Founded by <span className="text-ink font-semibold">Yovi Widianto</span>, we&rsquo;re designers and engineers who believe craft still matters.
-                    </p>
-                    <p>
-                      We don&rsquo;t chase trends. We don&rsquo;t over-engineer. We ask one question: <em className="not-italic font-semibold text-ink">&ldquo;Does this make someone&rsquo;s day better?&rdquo;</em> The name Kaixin (开心) means &ldquo;happy&rdquo; — that&rsquo;s the bar.
-                    </p>
-                  </div>
-                </Up>
+                </In>
+                <In delay={0.1} className="mt-8 space-y-6 text-[15px] leading-[1.85] text-foreground/70 max-w-lg">
+                  <p>
+                    Kaixin started because <span className="text-foreground font-bold border-b-2 border-kaixin">Yovi Widianto</span> was tired of seeing talented teams ship mediocre products. So he built a studio where craft still matters.
+                  </p>
+                  <p>
+                    We&rsquo;re designers and engineers who ask one question: <em>&ldquo;Does this make someone&rsquo;s day better?&rdquo;</em> The name Kaixin (开心) means <span className="font-bold text-foreground">happy</span>. That&rsquo;s the bar. Not metrics. Not vanity features. Happiness.
+                  </p>
+                </In>
 
-                {/* We don't do — personality section */}
-                <Up delay={0.25} className="mt-14">
-                  <p className="text-[13px] font-mono text-ink-faint tracking-wider uppercase mb-5">Things we don&rsquo;t do</p>
-                  <div className="space-y-3">
-                    {[
-                      "Charge by the hour",
-                      "Promise the moon, deliver a rock",
-                      "Outsource to random freelancers",
-                      "Write 40-page proposals nobody reads",
-                    ].map((item) => (
-                      <div key={item} className="flex items-center gap-3">
-                        <span className="text-kaixin text-lg leading-none">×</span>
-                        <span className="text-[14px] text-ink-light">{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </Up>
+                {/* Things we don't do — brutalist list */}
+                <In delay={0.2} className="mt-12">
+                  <Block hover={false} className="bg-secondary">
+                    <p className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-5">Things we absolutely don&rsquo;t do</p>
+                    <div className="space-y-3">
+                      {[
+                        "Charge by the hour",
+                        "Outsource your project to strangers",
+                        "Write 40-page proposals nobody reads",
+                        "Use the word 'synergy' unironically",
+                        "Ship and ghost",
+                      ].map((item) => (
+                        <div key={item} className="flex items-start gap-3">
+                          <span className="font-mono text-kaixin font-bold text-lg leading-none mt-0.5">✕</span>
+                          <span className="text-[14px] text-foreground/70">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Block>
+                </In>
               </div>
 
-              {/* Right — numbers + visual */}
-              <div className="md:col-span-5 md:pl-12 md:border-l md:border-ink/[0.08]">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-10 mb-14">
-                  {[
-                    { n: 200, s: "+", l: "Projects shipped" },
-                    { n: 98, s: "%", l: "Client retention" },
-                    { n: 15, s: "", l: "People" },
-                    { n: 4.9, s: "/5", l: "Avg. rating" },
-                  ].map((item) => (
-                    <Up key={item.l}>
-                      <div className="border-t border-ink/[0.08] pt-4">
-                        <p className="text-3xl md:text-4xl font-extrabold tracking-tight"><Count target={item.n} s={item.s} /></p>
-                        <p className="text-[12px] text-ink-faint mt-1 font-mono tracking-wider uppercase">{item.l}</p>
-                      </div>
-                    </Up>
-                  ))}
-                </div>
-
-                <Up delay={0.2}>
-                  <div className="relative rounded-2xl overflow-hidden aspect-[5/4] bg-paper">
-                    <Image src="/logo-kaixin.png" alt="Kaixin" width={100} height={100} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl opacity-60 scale-75" />
-                    <div className="absolute top-6 right-6 w-20 h-20 rounded-xl border border-ink/[0.06] rotate-6" />
-                    <div className="absolute bottom-6 left-6 w-10 h-10 rounded-lg bg-kaixin/10" />
-                    <div className="absolute top-1/2 right-8 w-3 h-3 rounded-full bg-kaixin/30" />
-                  </div>
-                </Up>
+              {/* Right — philosophy cards */}
+              <div className="md:col-span-5 space-y-4">
+                {[
+                  { label: "PHILOSOPHY 01", text: "The best code is the code nobody thinks about.", color: "bg-kaixin text-white border-foreground" },
+                  { label: "PHILOSOPHY 02", text: "If it takes a tutorial to use, we failed.", color: "bg-white text-foreground border-foreground" },
+                  { label: "PHILOSOPHY 03", text: "Ship early. Fix fast. Repeat.", color: "bg-white text-foreground border-foreground" },
+                  { label: "PHILOSOPHY 04", text: "Good design is invisible. Great design is unforgettable.", color: "bg-foreground text-white border-white" },
+                ].map((item, i) => (
+                  <In key={i} delay={i * 0.08}>
+                    <Block hover={true} className={item.color} style={{ boxShadow: "4px 4px 0 0 #FF6600" }}>
+                      <p className="font-mono text-[10px] tracking-[0.2em] opacity-50 mb-3">{item.label}</p>
+                      <p className="text-[17px] font-bold leading-snug">{item.text}</p>
+                    </Block>
+                  </In>
+                ))}
               </div>
             </div>
           </div>
         </section>
 
         {/* ═══ TEAM ═══ */}
-        <section id="team" className="py-24 md:py-36 bg-paper">
+        <section id="team" className="py-20 md:py-28 bg-secondary border-y-2 border-foreground">
           <div className="max-w-[1400px] mx-auto px-6 md:px-10">
-            <Up className="mb-16 md:mb-20">
-              <p className="text-[13px] font-mono text-ink-faint tracking-wider uppercase mb-3">04 — Team</p>
-              <h2 className="text-3xl md:text-[3.2rem] font-bold tracking-tight">People, not headcount.</h2>
-            </Up>
+            <In className="mb-14">
+              <Stamp color="bg-foreground text-white" rotate={2}>Team</Stamp>
+              <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5">
+                The humans<span className="text-foreground/30">.</span>
+              </h2>
+            </In>
 
-            {/* Founder — editorial feature */}
-            <Up className="mb-14 md:mb-20">
-              <div className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-ink group">
-                <div className="absolute inset-0 bg-gradient-to-r from-kaixin/[0.08] via-transparent to-transparent" />
-                <div className="relative grid md:grid-cols-[1fr_1fr] gap-0">
-                  <div className="p-10 md:p-16 lg:p-20 flex flex-col justify-center order-2 md:order-1">
-                    <div className="flex items-center gap-3 mb-8">
-                      <span className="text-[13px] font-mono text-white/30 tracking-wider">FOUNDER</span>
-                      <span className="w-12 h-px bg-white/10" />
-                    </div>
-                    <h3 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[0.95]">
-                      Yovi<br />Widianto
-                    </h3>
-                    <p className="text-white/40 text-[15px] leading-[1.8] max-w-sm mt-6">
-                      Started Kaixin because he kept seeing talented teams build mediocre products. Believes the best code is the code you never have to think about. Previously shipped products used by millions.
-                    </p>
-                    <div className="flex gap-2 mt-8">
-                      {["LinkedIn", "GitHub", "Twitter"].map((s) => (
-                        <button key={s} className="px-4 py-2.5 rounded-lg text-[13px] font-medium text-white/60 bg-white/[0.06] hover:bg-kaixin/20 hover:text-kaixin transition-all border border-white/[0.06] hover:border-kaixin/20">
-                          {s}
-                        </button>
-                      ))}
-                    </div>
+            {/* Founder — big block */}
+            <In className="mb-6">
+              <Block hover={true} className="md:flex md:items-center md:gap-12">
+                <div className="flex items-start gap-6 md:w-1/3">
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-none border-2 border-foreground bg-kaixin flex items-center justify-center shadow-[3px_3px_0_0_#111] flex-shrink-0 stamp-alt">
+                    <span className="text-3xl md:text-4xl font-extrabold text-white">YW</span>
                   </div>
-                  <div className="relative hidden md:flex items-center justify-center min-h-[400px] lg:min-h-[500px] order-1 md:order-2">
-                    <div className="w-44 h-44 lg:w-56 lg:h-56 rounded-3xl bg-gradient-to-br from-kaixin to-kaixin-dark/70 flex items-center justify-center shadow-2xl shadow-kaixin/20 rotate-[3deg] group-hover:rotate-0 transition-transform duration-700">
-                      <span className="text-5xl lg:text-7xl font-extrabold text-white/80">YW</span>
-                    </div>
-                    <div className="absolute top-16 right-16 w-6 h-6 rounded-full border-2 border-white/[0.08]" />
-                    <div className="absolute bottom-20 left-20 w-4 h-4 rounded-full bg-kaixin/20" />
-                    <div className="absolute top-1/3 left-1/3 w-3 h-3 rounded-sm bg-white/[0.04] rotate-45" />
+                  <div>
+                    <h3 className="text-2xl md:text-3xl font-extrabold uppercase tracking-tight">Yovi Widianto</h3>
+                    <Stamp color="bg-kaixin text-white border-foreground" rotate={-2}>Founder</Stamp>
                   </div>
                 </div>
-              </div>
-            </Up>
-
-            {/* Other team — horizontal strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              {[
-                { name: "Sarah Chen", role: "CTO", i: "SC" },
-                { name: "Budi Santoso", role: "Design Lead", i: "BS" },
-                { name: "Linda Kusuma", role: "Eng. Lead", i: "LK" },
-                { name: "Reza Pratama", role: "Product", i: "RP" },
-              ].map((m) => (
-                <Up key={m.name}>
-                  <div className="p-6 md:p-7 rounded-2xl border border-ink/[0.05] bg-white hover-lift group">
-                    <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center mb-4 group-hover:bg-kaixin/10 transition-colors">
-                      <span className="text-[11px] font-bold text-ink/30 group-hover:text-kaixin transition-colors">{m.i}</span>
-                    </div>
-                    <p className="font-semibold text-[15px] leading-tight">{m.name}</p>
-                    <p className="text-[12px] text-ink-light mt-1">{m.role}</p>
+                <div className="mt-6 md:mt-0 md:w-2/3">
+                  <p className="text-[15px] leading-[1.8] text-foreground/60 mb-6">
+                    Started Kaixin because he kept seeing talented teams build mediocre products. Believes the best code is the code you never think about. Previously shipped products used by millions across Southeast Asia.
+                  </p>
+                  <div className="flex gap-2">
+                    {["LinkedIn", "GitHub", "Twitter"].map((s) => (
+                      <button key={s} className="px-3 py-2 text-[12px] font-bold uppercase tracking-wider border-2 border-foreground bg-white hover:bg-kaixin hover:text-white transition-colors shadow-[2px_2px_0_0_#111]">
+                        {s}
+                      </button>
+                    ))}
                   </div>
-                </Up>
+                </div>
+              </Block>
+            </In>
+
+            {/* Other team — row of blocks */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {team.filter(t => !t.founder).map((m) => (
+                <In key={m.name}>
+                  <Block hover={true} className="text-center group">
+                    <div className="w-14 h-14 mx-auto border-2 border-foreground bg-secondary flex items-center justify-center mb-4 group-hover:bg-kaixin group-hover:text-white transition-colors shadow-[2px_2px_0_0_#111]">
+                      <span className="font-bold text-[13px]">{m.initials}</span>
+                    </div>
+                    <p className="font-bold text-[14px] uppercase tracking-tight">{m.name}</p>
+                    <p className="font-mono text-[10px] tracking-[0.15em] text-foreground/40 mt-1">{m.role}</p>
+                  </Block>
+                </In>
               ))}
             </div>
           </div>
         </section>
 
+        {/* ═══ CTA ═══ */}
+        <section className="py-20 md:py-24">
+          <div className="max-w-[1400px] mx-auto px-6 md:px-10 text-center">
+            <In>
+              <h2 className="text-4xl md:text-[4.5rem] font-extrabold tracking-tight uppercase leading-[0.95]">
+                Got a project<span className="text-kaixin">?</span>
+              </h2>
+              <p className="text-foreground/50 text-[15px] mt-4 max-w-md mx-auto">Drop us a line. We reply within 24 hours. No sales pitch, we promise.</p>
+              <div className="mt-8 flex justify-center gap-4">
+                <a href="#contact" className="inline-flex items-center gap-2 bg-kaixin text-white px-6 py-3.5 font-bold text-[13px] uppercase tracking-wider border-2 border-foreground shadow-[4px_4px_0_0_#111] hover:shadow-[2px_2px_0_0_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all">
+                  Let&rsquo;s Talk
+                  <ArrowUpRight className="w-4 h-4" />
+                </a>
+              </div>
+            </In>
+          </div>
+        </section>
+
         {/* ═══ CONTACT ═══ */}
-        <section id="contact" className="py-24 md:py-36">
+        <section id="contact" className="py-20 md:py-28 bg-foreground text-white border-t-2 border-white">
           <div className="max-w-[1400px] mx-auto px-6 md:px-10">
-            <div className="grid md:grid-cols-12 gap-10 md:gap-0">
-              <div className="md:col-span-5 md:pr-16">
-                <Up>
-                  <p className="text-[13px] font-mono text-ink-faint tracking-wider uppercase mb-3">05 — Contact</p>
-                  <h2 className="text-3xl md:text-[3.2rem] font-bold tracking-tight leading-[1.05] mb-6">
-                    Let&rsquo;s make<br />something<span className="text-kaixin">.</span>
+            <div className="grid md:grid-cols-2 gap-10 md:gap-16">
+              <div>
+                <In>
+                  <Stamp color="bg-kaixin text-white border-white" rotate={-2}>Contact</Stamp>
+                  <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5 text-white">
+                    Write us<span className="text-kaixin">.</span>
                   </h2>
-                </Up>
-                <Up delay={0.1}>
-                  <p className="text-ink-light text-[15px] leading-[1.8] max-w-sm mb-10">
-                    Project, idea, or napkin sketch — we&rsquo;re all ears. Reply within 24 hours, no exceptions.
-                  </p>
-                </Up>
-                <Up delay={0.15}>
-                  <div className="space-y-4">
+                </In>
+                <In delay={0.1} className="mt-10 space-y-5">
+                  <p className="text-white/50 text-[15px] leading-relaxed max-w-sm">Project, idea, or rough sketch. We read every message. Reply within 24 hours.</p>
+                  <div className="space-y-3">
                     {[
                       { icon: Mail, label: "hello@kaixin.tech" },
                       { icon: MapPin, label: "Jakarta, Indonesia" },
                     ].map((c) => (
                       <div key={c.label} className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-surface flex items-center justify-center"><c.icon className="w-4 h-4 text-ink-light" /></div>
-                        <span className="text-[14px] text-ink-light">{c.label}</span>
+                        <div className="w-10 h-10 border-2 border-white flex items-center justify-center"><c.icon className="w-4 h-4 text-white/60" /></div>
+                        <span className="text-[14px] text-white/60">{c.label}</span>
                       </div>
                     ))}
                   </div>
-                </Up>
+                </In>
               </div>
 
-              <div className="md:col-span-7 md:pl-12 md:border-l md:border-ink/[0.08]">
-                <Up delay={0.1}>
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="grid sm:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-[13px] font-medium text-ink-light mb-2">Name</label>
-                        <Input name="name" placeholder="Your name" required className="h-12 rounded-xl border-ink/10 bg-white text-[15px] placeholder:text-ink-faint focus:border-kaixin/40 focus:ring-kaixin/10" />
-                      </div>
-                      <div>
-                        <label className="block text-[13px] font-medium text-ink-light mb-2">Email</label>
-                        <Input name="email" type="email" placeholder="you@company.com" required className="h-12 rounded-xl border-ink/10 bg-white text-[15px] placeholder:text-ink-faint focus:border-kaixin/40 focus:ring-kaixin/10" />
-                      </div>
+              <In delay={0.15}>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">Name</label>
+                      <Input name="name" placeholder="Your name" required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
                     </div>
                     <div>
-                      <label className="block text-[13px] font-medium text-ink-light mb-2">Subject</label>
-                      <Input name="subject" placeholder="What's this about?" required className="h-12 rounded-xl border-ink/10 bg-white text-[15px] placeholder:text-ink-faint focus:border-kaixin/40 focus:ring-kaixin/10" />
+                      <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">Email</label>
+                      <Input name="email" type="email" placeholder="you@co.com" required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
                     </div>
-                    <div>
-                      <label className="block text-[13px] font-medium text-ink-light mb-2">Message</label>
-                      <Textarea name="message" placeholder="Tell us about your project, timeline, budget — whatever you've got." required rows={6} className="rounded-xl border-ink/10 bg-white text-[15px] placeholder:text-ink-faint focus:border-kaixin/40 focus:ring-kaixin/10 resize-none" />
-                    </div>
-                    <Button type="submit" disabled={sending} className="h-12 rounded-xl bg-ink hover:bg-ink/85 text-white text-[15px] font-medium px-8 gap-2 shadow-none hover:shadow-none transition-all">
-                      {sending ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
-                      Send it
-                    </Button>
-                  </form>
-                </Up>
-              </div>
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">Subject</label>
+                    <Input name="subject" placeholder="What's this about?" required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">Message</label>
+                    <Textarea name="message" placeholder="Tell us everything." required rows={5} className="bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none resize-none" />
+                  </div>
+                  <Button type="submit" disabled={sending} className="h-12 w-full sm:w-auto bg-kaixin hover:bg-kaixin-dark text-white text-[13px] font-bold uppercase tracking-wider px-8 border-2 border-white shadow-[3px_3px_0_0_rgba(255,255,255,0.3)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all gap-2">
+                    {sending ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                    Send it
+                  </Button>
+                </form>
+              </In>
             </div>
           </div>
         </section>
       </main>
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="border-t border-ink/[0.06]">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <Image src="/logo-kaixin.png" alt="" width={20} height={20} className="rounded-md" />
-            <span className="text-[14px] font-bold text-ink">kaixin</span>
-            <span className="text-[13px] text-ink-faint ml-2">&copy; {new Date().getFullYear()}</span>
+      <footer className="border-t-2 border-foreground">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Image src="/logo-kaixin.png" alt="" width={22} height={22} className="rounded border border-foreground" />
+            <span className="text-[13px] font-bold uppercase tracking-wider">Kaixin</span>
           </div>
-          <p className="text-[13px] text-ink-faint">Built with stubbornness in Jakarta.</p>
-          <div className="flex gap-5">
+          <p className="font-mono text-[11px] text-foreground/40 uppercase tracking-wider">© {new Date().getFullYear()} — Built with stubbornness</p>
+          <div className="flex gap-4">
             {["Twitter", "GitHub", "LinkedIn"].map((s) => (
-              <a key={s} href="#" className="text-[13px] text-ink-faint hover:text-ink transition-colors">{s}</a>
+              <a key={s} href="#" className="font-mono text-[11px] text-foreground/40 uppercase tracking-wider hover:text-kaixin transition-colors">{s}</a>
             ))}
           </div>
         </div>
       </footer>
 
+      {/* Back to top */}
       <motion.button
         initial={{ opacity: 0, scale: 0.8 }}
         animate={showTop ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="fixed bottom-6 right-6 z-50 w-10 h-10 rounded-xl bg-ink text-white flex items-center justify-center hover:bg-ink/80 transition-colors"
+        className="fixed bottom-6 right-6 z-50 w-11 h-11 bg-kaixin text-white border-2 border-foreground flex items-center justify-center shadow-[3px_3px_0_0_#111] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
         aria-label="Top"
       >
         <ArrowUpRight className="w-4 h-4 -rotate-45" />
