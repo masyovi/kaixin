@@ -10,11 +10,14 @@ import {
   MapPin,
   Send,
   ExternalLink,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 import Image from "next/image";
 
 /* ═══════════════ HELPERS ═══════════════ */
@@ -43,7 +46,6 @@ function Count({ target, s = "" }: { target: number; s?: string }) {
   return <span ref={r}>{n.toLocaleString()}{s}</span>;
 }
 
-/* ═══════════════ STICKER / STAMP ═══════════════ */
 function Stamp({ children, color = "bg-kaixin text-white", rotate = -3 }: { children: React.ReactNode; color?: string; rotate?: number }) {
   return (
     <span className={`inline-block ${color} font-mono text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 border-2 border-foreground shadow-[3px_3px_0_0_#111]`} style={{ transform: `rotate(${rotate}deg)` }}>
@@ -52,7 +54,6 @@ function Stamp({ children, color = "bg-kaixin text-white", rotate = -3 }: { chil
   );
 }
 
-/* ═══════════════ BLOCK (brutalist card) ═══════════════ */
 function Block({ children, className = "", hover = true, bg = "bg-white" }: { children: React.ReactNode; className?: string; hover?: boolean; bg?: string }) {
   return (
     <div className={`${bg} border-2 border-foreground p-6 md:p-8 shadow-[4px_4px_0_0_#111] ${hover ? "hover:shadow-[6px_6px_0_0_#111] hover:-translate-y-1 transition-all duration-200" : ""} ${className}`}>
@@ -62,27 +63,47 @@ function Block({ children, className = "", hover = true, bg = "bg-white" }: { ch
 }
 
 /* ═══════════════ MARQUEE ═══════════════ */
-const marqueeL = ["DESIGN", "ENGINEER", "SHIP", "ITERATE", "DESIGN", "ENGINEER", "SHIP", "ITERATE"];
-const marqueeR = ["REACT", "NEXT.JS", "AI/ML", "CLOUD", "MOBILE", "BRAND", "DEVOPS", "STRATEGY"];
 
 function DualMarquee() {
+  const { t } = useI18n();
+  const top = [t("mq.design"), t("mq.engineer"), t("mq.ship"), t("mq.iterate")];
+  const bottom = [t("mq.react"), t("mq.nextjs"), t("mq.ai"), t("mq.cloud"), t("mq.mobile"), t("mq.brand"), t("mq.devops"), t("mq.strategy")];
   return (
     <div className="border-y-2 border-foreground bg-kaixin text-white overflow-hidden select-none">
       <div className="py-3 border-b border-white/20">
         <div className="marquee-l flex whitespace-nowrap">
-          {[...marqueeL, ...marqueeL].map((t, i) => (
-            <span key={i} className="mx-6 text-sm font-bold tracking-[0.2em]">{t}<span className="ml-6 text-white/40">✦</span></span>
+          {[...top, ...top].map((t2, i) => (
+            <span key={i} className="mx-6 text-sm font-bold tracking-[0.2em]">{t2}<span className="ml-6 text-white/40">✦</span></span>
           ))}
         </div>
       </div>
       <div className="py-3 bg-white text-foreground">
         <div className="marquee-r flex whitespace-nowrap">
-          {[...marqueeR, ...marqueeR].map((t, i) => (
-            <span key={i} className="mx-6 text-sm font-bold tracking-[0.2em]">{t}<span className="ml-6 text-ink-faint">◆</span></span>
+          {[...bottom, ...bottom].map((t2, i) => (
+            <span key={i} className="mx-6 text-sm font-bold tracking-[0.2em]">{t2}<span className="ml-6 text-foreground/30">◆</span></span>
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+/* ═══════════════ LANGUAGE TOGGLE ═══════════════ */
+
+function LangToggle() {
+  const { locale, setLocale, t } = useI18n();
+  const toggle = () => setLocale(locale === "en" ? "id" : "en");
+  const label = locale === "en" ? "ID" : "EN";
+
+  return (
+    <button
+      onClick={toggle}
+      className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold uppercase tracking-wider border-2 border-foreground bg-white hover:bg-kaixin hover:text-white transition-colors shadow-[2px_2px_0_0_#111]"
+      aria-label={`Switch to ${label}`}
+    >
+      <Globe className="w-3.5 h-3.5" />
+      {label}
+    </button>
   );
 }
 
@@ -92,6 +113,7 @@ export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [showTop, setShowTop] = useState(false);
+  const { t } = useI18n();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -107,34 +129,42 @@ export default function Page() {
     try {
       const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: fd.get("name"), email: fd.get("email"), subject: fd.get("subject"), message: fd.get("message") }) });
       if (!res.ok) throw new Error();
-      toast({ title: "Sent ✓", description: "We'll reply within a day." });
+      toast({ title: t("toast.sent"), description: t("toast.sent.desc") });
       e.currentTarget.reset();
-    } catch { toast({ title: "Error", description: "Try again.", variant: "destructive" }); }
+    } catch { toast({ title: t("toast.error"), description: t("toast.error.desc"), variant: "destructive" }); }
     finally { setSending(false); }
   };
 
   const services = [
-    { num: "01", title: "Product Design", desc: "Figma → Prototype → Handoff. We don't just draw screens — we design flows that actually work.", tools: ["Figma", "Prototyping", "Design Systems"] },
-    { num: "02", title: "Web Engineering", desc: "React, Next.js, TypeScript. Performance-first. No 20MB bundles allowed.", tools: ["React", "Next.js", "TypeScript"] },
-    { num: "03", title: "AI Integration", desc: "LLMs, RAG, NLP. We build AI features that feel useful, not forced.", tools: ["OpenAI", "LangChain", "Python"] },
-    { num: "04", title: "Cloud & Infra", desc: "AWS, Docker, K8s. Infrastructure that doesn't wake you up at 3AM.", tools: ["AWS", "Terraform", "Kubernetes"] },
-    { num: "05", title: "Mobile Apps", desc: "Native or cross-platform. We know when to pick which.", tools: ["Swift", "Kotlin", "React Native"] },
-    { num: "06", title: "Brand Identity", desc: "Logo, type, color, motion. The DNA of how people recognize you.", tools: ["Strategy", "Visual ID", "Motion"] },
+    { num: "01", titleKey: "svc.01.title", descKey: "svc.01.desc", tools: ["Figma", "Prototyping", "Design Systems"] },
+    { num: "02", titleKey: "svc.02.title", descKey: "svc.02.desc", tools: ["React", "Next.js", "TypeScript"] },
+    { num: "03", titleKey: "svc.03.title", descKey: "svc.03.desc", tools: ["OpenAI", "LangChain", "Python"] },
+    { num: "04", titleKey: "svc.04.title", descKey: "svc.04.desc", tools: ["AWS", "Terraform", "Kubernetes"] },
+    { num: "05", titleKey: "svc.05.title", descKey: "svc.05.desc", tools: ["Swift", "Kotlin", "React Native"] },
+    { num: "06", titleKey: "svc.06.title", descKey: "svc.06.desc", tools: ["Strategy", "Visual ID", "Motion"] },
   ];
 
   const projects = [
-    { tag: "FINTECH", title: "Lending platform rebuilt for 2M+ users", year: "24" },
-    { tag: "HEALTH", title: "Telemedicine handling 50K monthly sessions", year: "24" },
-    { tag: "ECOM", title: "Checkout flow — +34% conversion overnight", year: "24" },
-    { tag: "SaaS", title: "Analytics dashboard for 400+ enterprise teams", year: "23" },
+    { tagKey: "prj.01.tag", titleKey: "prj.01.title", year: "24" },
+    { tagKey: "prj.02.tag", titleKey: "prj.02.title", year: "24" },
+    { tagKey: "prj.03.tag", titleKey: "prj.03.title", year: "24" },
+    { tagKey: "prj.04.tag", titleKey: "prj.04.title", year: "23" },
   ];
 
-  const team = [
-    { name: "Yovi Widianto", role: "FOUNDER", initials: "YW", founder: true },
-    { name: "Sarah Chen", role: "CTO", initials: "SC", founder: false },
-    { name: "Budi Santoso", role: "DESIGN", initials: "BS", founder: false },
-    { name: "Linda Kusuma", role: "ENG LEAD", initials: "LK", founder: false },
-    { name: "Reza Pratama", role: "PRODUCT", initials: "RP", founder: false },
+  const donts = ["dnd.1", "dnd.2", "dnd.3", "dnd.4", "dnd.5"];
+
+  const philosophies = [
+    { labelKey: "ph.01.label", textKey: "ph.01.text", color: "bg-kaixin text-white border-foreground" },
+    { labelKey: "ph.02.label", textKey: "ph.02.text", color: "bg-white text-foreground border-foreground" },
+    { labelKey: "ph.03.label", textKey: "ph.03.text", color: "bg-white text-foreground border-foreground" },
+    { labelKey: "ph.04.label", textKey: "ph.04.text", color: "bg-foreground text-white border-white" },
+  ];
+
+  const otherTeam = [
+    { nameKey: "team.sarah.name", roleKey: "team.sarah.role", initials: "SC" },
+    { nameKey: "team.budi.name", roleKey: "team.budi.role", initials: "BS" },
+    { nameKey: "team.linda.name", roleKey: "team.linda.role", initials: "LK" },
+    { nameKey: "team.reza.name", roleKey: "team.reza.role", initials: "RP" },
   ];
 
   return (
@@ -146,21 +176,25 @@ export default function Page() {
             <Image src="/logo-kaixin.png" alt="" width={28} height={28} className="rounded border border-foreground" />
             <span className="text-[16px] font-extrabold tracking-tight uppercase">Kaixin</span>
           </a>
-          <div className="hidden md:flex items-center gap-1">
-            {["Work", "About", "Team", "Contact"].map((n) => (
-              <a key={n} href={`#${n.toLowerCase()}`} className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-wider hover:bg-foreground hover:text-white transition-colors border-2 border-transparent hover:border-foreground">{n}</a>
+          <div className="hidden md:flex items-center gap-2">
+            {[t("nav.work"), t("nav.about"), t("nav.team"), t("nav.contact")].map((n, i) => (
+              <a key={i} href={`#${["work","about","team","contact"][i]}`} className="px-3 py-1.5 text-[13px] font-bold uppercase tracking-wider hover:bg-foreground hover:text-white transition-colors border-2 border-transparent hover:border-foreground">{n}</a>
             ))}
+            <div className="ml-2"><LangToggle /></div>
           </div>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden w-10 h-10 flex items-center justify-center border-2 border-foreground bg-white hover:bg-foreground hover:text-white transition-colors" aria-label="Menu">
-            {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </button>
+          <div className="flex md:hidden items-center gap-2">
+            <LangToggle />
+            <button onClick={() => setMenuOpen(!menuOpen)} className="w-10 h-10 flex items-center justify-center border-2 border-foreground bg-white hover:bg-foreground hover:text-white transition-colors" aria-label="Menu">
+              {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
         </nav>
       </header>
 
       {/* Mobile menu */}
       <div className={`fixed inset-0 z-40 bg-kaixin flex flex-col items-center justify-center gap-6 transition-all duration-400 border-2 border-foreground md:hidden ${menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
-        {["Work", "About", "Team", "Contact"].map((n) => (
-          <a key={n} href={`#${n.toLowerCase()}`} onClick={() => setMenuOpen(false)} className="text-3xl font-extrabold uppercase text-white tracking-wider hover:underline">{n}</a>
+        {[t("nav.work"), t("nav.about"), t("nav.team"), t("nav.contact")].map((n, i) => (
+          <a key={i} href={`#${["work","about","team","contact"][i]}`} onClick={() => setMenuOpen(false)} className="text-3xl font-extrabold uppercase text-white tracking-wider hover:underline">{n}</a>
         ))}
       </div>
 
@@ -168,68 +202,57 @@ export default function Page() {
 
         {/* ═══ HERO ═══ */}
         <section className="relative min-h-[92dvh] flex items-center border-b-2 border-foreground">
-          {/* Background pattern */}
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "repeating-linear-gradient(0deg, #111 0, #111 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, #111 0, #111 1px, transparent 1px, transparent 40px)" }} />
-
           <div className="relative max-w-[1400px] mx-auto px-6 md:px-10 pt-28 pb-20 w-full">
             <div className="grid md:grid-cols-12 gap-8 md:gap-6 items-end">
               <div className="md:col-span-8">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                   <div className="flex flex-wrap items-center gap-3 mb-8">
-                    <Stamp color="bg-kaixin text-white" rotate={-2}>Est. 2024</Stamp>
-                    <Stamp color="bg-white text-foreground" rotate={1}>Jakarta, ID</Stamp>
+                    <Stamp color="bg-kaixin text-white" rotate={-2}>{t("hero.stamp.est")}</Stamp>
+                    <Stamp color="bg-white text-foreground" rotate={1}>{t("hero.stamp.jakarta")}</Stamp>
                   </div>
                 </motion.div>
-
                 <motion.h1
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
                   className="text-[clamp(2.5rem,7.5vw,6.5rem)] font-extrabold leading-[0.9] tracking-[-0.03em] uppercase"
                 >
-                  We don&rsquo;t
+                  {t("hero.line1")}
                   <br />
-                  do boring
+                  {t("hero.line2")}
                   <br />
                   <span className="relative inline-block">
-                    <span className="bg-kaixin text-white px-3 -rotate-1 inline-block">software</span>
+                    <span className="bg-kaixin text-white px-3 -rotate-1 inline-block">{t("hero.highlight")}</span>
                   </span>
                   <span className="text-kaixin">.</span>
                 </motion.h1>
-
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-10 flex flex-col sm:flex-row gap-4 sm:gap-8 items-start sm:items-end">
-                  <p className="text-[15px] leading-relaxed max-w-sm text-foreground/70">
-                    Small studio. Big standards. We build digital products that don&rsquo;t suck — founded by Yovi Widianto.
-                  </p>
+                  <p className="text-[15px] leading-relaxed max-w-sm text-foreground/70">{t("hero.desc")}</p>
                   <a href="#work" className="inline-flex items-center gap-2 bg-foreground text-white px-5 py-3 font-bold text-[13px] uppercase tracking-wider border-2 border-foreground hover:bg-kaixin transition-colors shadow-[4px_4px_0_0_#FF6600]">
-                    See Work
+                    {t("hero.cta")}
                     <ArrowUpRight className="w-4 h-4" />
                   </a>
                 </motion.div>
               </div>
-
-              {/* Side block */}
               <div className="md:col-span-4">
                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
                   <Block hover={false} className="bg-kaixin border-foreground shadow-[4px_4px_0_0_#111]">
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-white/60 mb-4">The short version</p>
+                    <p className="font-mono text-[11px] uppercase tracking-widest text-white/60 mb-4">
+                      {t("hero.desc").split(".")[0]}
+                    </p>
                     <div className="space-y-3 text-white">
-                      <div className="flex justify-between border-b border-white/20 pb-2">
-                        <span className="font-bold text-[13px] uppercase">Projects</span>
-                        <span className="font-mono text-[13px]">200+</span>
-                      </div>
-                      <div className="flex justify-between border-b border-white/20 pb-2">
-                        <span className="font-bold text-[13px] uppercase">Retention</span>
-                        <span className="font-mono text-[13px]">98%</span>
-                      </div>
-                      <div className="flex justify-between border-b border-white/20 pb-2">
-                        <span className="font-bold text-[13px] uppercase">Team</span>
-                        <span className="font-mono text-[13px]">15</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-bold text-[13px] uppercase">Rating</span>
-                        <span className="font-mono text-[13px]">4.9/5</span>
-                      </div>
+                      {[
+                        { l: t("stat.projects"), v: "200+" },
+                        { l: t("stat.retention"), v: "98%" },
+                        { l: t("stat.team"), v: "15" },
+                        { l: t("stat.rating"), v: "4.9/5" },
+                      ].map((item) => (
+                        <div key={item.l} className="flex justify-between border-b border-white/20 pb-2 last:border-0">
+                          <span className="font-bold text-[13px] uppercase">{item.l}</span>
+                          <span className="font-mono text-[13px]">{item.v}</span>
+                        </div>
+                      ))}
                     </div>
                   </Block>
                 </motion.div>
@@ -246,17 +269,15 @@ export default function Page() {
             <In className="mb-14 md:mb-20">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                  <Stamp color="bg-kaixin text-white" rotate={-2}>What we do</Stamp>
+                  <Stamp color="bg-kaixin text-white" rotate={-2}>{t("svc.stamp")}</Stamp>
                   <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5">
-                    Six things.
+                    {t("svc.title")}
                     <br />
-                    <span className="text-foreground/40">No more, no less.</span>
+                    <span className="text-foreground/40">{t("svc.subtitle")}</span>
                   </h2>
                 </div>
               </div>
             </In>
-
-            {/* Stacked blocks — brutalist style */}
             <div className="grid md:grid-cols-2 gap-4">
               {services.map((s, i) => (
                 <In key={s.num} delay={i * 0.06}>
@@ -265,11 +286,11 @@ export default function Page() {
                       <span className="font-mono text-[13px] font-bold text-foreground/30">{s.num}</span>
                       <ExternalLink className="w-4 h-4 text-foreground/20 group-hover:text-kaixin transition-colors" />
                     </div>
-                    <h3 className="text-xl md:text-2xl font-extrabold uppercase tracking-tight mb-3 group-hover:text-kaixin transition-colors">{s.title}</h3>
-                    <p className="text-[14px] leading-relaxed text-foreground/60 mb-6">{s.desc}</p>
+                    <h3 className="text-xl md:text-2xl font-extrabold uppercase tracking-tight mb-3 group-hover:text-kaixin transition-colors">{t(s.titleKey)}</h3>
+                    <p className="text-[14px] leading-relaxed text-foreground/60 mb-6">{t(s.descKey)}</p>
                     <div className="flex flex-wrap gap-2">
-                      {s.tools.map((t) => (
-                        <span key={t} className="font-mono text-[11px] uppercase tracking-wider bg-background border border-foreground px-2.5 py-1">{t}</span>
+                      {s.tools.map((tl) => (
+                        <span key={tl} className="font-mono text-[11px] uppercase tracking-wider bg-background border border-foreground px-2.5 py-1">{tl}</span>
                       ))}
                     </div>
                   </Block>
@@ -283,23 +304,22 @@ export default function Page() {
         <section className="py-20 md:py-28 bg-foreground text-white border-y-2 border-foreground">
           <div className="max-w-[1400px] mx-auto px-6 md:px-10">
             <In className="mb-14">
-              <Stamp color="bg-white text-foreground border-white" rotate={2}>Selected</Stamp>
+              <Stamp color="bg-white text-foreground border-white" rotate={2}>{t("prj.stamp")}</Stamp>
               <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5 text-white">
-                Things we shipped<span className="text-kaixin">.</span>
+                {t("prj.title")}
               </h2>
             </In>
-
             <div className="grid md:grid-cols-2 gap-4">
               {projects.map((p, i) => (
                 <In key={i} delay={i * 0.08}>
                   <Block hover={true} bg="bg-foreground" className="border-white group cursor-pointer">
                     <div className="flex items-start justify-between mb-6">
-                      <span className="font-mono text-[11px] font-bold text-kaixin bg-kaixin/20 px-2 py-1">{p.tag}</span>
+                      <span className="font-mono text-[11px] font-bold text-kaixin bg-kaixin/20 px-2 py-1">{t(p.tagKey)}</span>
                       <span className="font-mono text-[12px] text-white/40">{p.year}</span>
                     </div>
-                    <p className="text-lg md:text-xl font-bold uppercase leading-snug text-white mb-5">{p.title}</p>
+                    <p className="text-lg md:text-xl font-bold uppercase leading-snug text-white mb-5">{t(p.titleKey)}</p>
                     <div className="flex items-center gap-2 text-white/50 group-hover:text-kaixin group-hover:gap-3 transition-all text-[13px] font-bold uppercase tracking-wider">
-                      <span>Case study</span>
+                      <span>{t("svc.case")}</span>
                       <ArrowUpRight className="w-4 h-4" />
                     </div>
                   </Block>
@@ -315,56 +335,41 @@ export default function Page() {
             <div className="grid md:grid-cols-12 gap-6">
               <div className="md:col-span-7">
                 <In>
-                  <Stamp color="bg-kaixin text-white" rotate={-3}>About</Stamp>
+                  <Stamp color="bg-kaixin text-white" rotate={-3}>{t("abt.stamp")}</Stamp>
                   <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5 leading-[1.05]">
-                    Small team.
+                    {t("abt.title")}
                     <br />
-                    No BS<span className="text-foreground/30">.</span>
+                    {t("abt.title2")}<span className="text-foreground/30">.</span>
                   </h2>
                 </In>
                 <In delay={0.1} className="mt-8 space-y-6 text-[15px] leading-[1.85] text-foreground/70 max-w-lg">
                   <p>
-                    Kaixin started because <span className="text-foreground font-bold border-b-2 border-kaixin">Yovi Widianto</span> was tired of seeing talented teams ship mediocre products. So he built a studio where craft still matters.
+                    {t("abt.p1")} <span className="text-foreground font-bold border-b-2 border-kaixin">{t("abt.p1.bold")}</span> {t("abt.p1.rest")}
                   </p>
                   <p>
-                    We&rsquo;re designers and engineers who ask one question: <em>&ldquo;Does this make someone&rsquo;s day better?&rdquo;</em> The name Kaixin (开心) means <span className="font-bold text-foreground">happy</span>. That&rsquo;s the bar. Not metrics. Not vanity features. Happiness.
+                    {t("abt.p2")} <span className="font-bold text-foreground">{t("abt.p2.bold")}</span>. {t("abt.p2.end")}
                   </p>
                 </In>
-
-                {/* Things we don't do — brutalist list */}
                 <In delay={0.2} className="mt-12">
                   <Block hover={false} className="bg-secondary">
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-5">Things we absolutely don&rsquo;t do</p>
+                    <p className="font-mono text-[11px] uppercase tracking-widest text-foreground/40 mb-5">{t("dnd.title")}</p>
                     <div className="space-y-3">
-                      {[
-                        "Charge by the hour",
-                        "Outsource your project to strangers",
-                        "Write 40-page proposals nobody reads",
-                        "Use the word 'synergy' unironically",
-                        "Ship and ghost",
-                      ].map((item) => (
-                        <div key={item} className="flex items-start gap-3">
+                      {donts.map((key) => (
+                        <div key={key} className="flex items-start gap-3">
                           <span className="font-mono text-kaixin font-bold text-lg leading-none mt-0.5">✕</span>
-                          <span className="text-[14px] text-foreground/70">{item}</span>
+                          <span className="text-[14px] text-foreground/70">{t(key)}</span>
                         </div>
                       ))}
                     </div>
                   </Block>
                 </In>
               </div>
-
-              {/* Right — philosophy cards */}
               <div className="md:col-span-5 space-y-4">
-                {[
-                  { label: "PHILOSOPHY 01", text: "The best code is the code nobody thinks about.", color: "bg-kaixin text-white border-foreground" },
-                  { label: "PHILOSOPHY 02", text: "If it takes a tutorial to use, we failed.", color: "bg-white text-foreground border-foreground" },
-                  { label: "PHILOSOPHY 03", text: "Ship early. Fix fast. Repeat.", color: "bg-white text-foreground border-foreground" },
-                  { label: "PHILOSOPHY 04", text: "Good design is invisible. Great design is unforgettable.", color: "bg-foreground text-white border-white" },
-                ].map((item, i) => (
+                {philosophies.map((item, i) => (
                   <In key={i} delay={i * 0.08}>
                     <Block hover={true} className={item.color} style={{ boxShadow: "4px 4px 0 0 #FF6600" }}>
-                      <p className="font-mono text-[10px] tracking-[0.2em] opacity-50 mb-3">{item.label}</p>
-                      <p className="text-[17px] font-bold leading-snug">{item.text}</p>
+                      <p className="font-mono text-[10px] tracking-[0.2em] opacity-50 mb-3">{t(item.labelKey)}</p>
+                      <p className="text-[17px] font-bold leading-snug">{t(item.textKey)}</p>
                     </Block>
                   </In>
                 ))}
@@ -377,28 +382,24 @@ export default function Page() {
         <section id="team" className="py-20 md:py-28 bg-secondary border-y-2 border-foreground">
           <div className="max-w-[1400px] mx-auto px-6 md:px-10">
             <In className="mb-14">
-              <Stamp color="bg-foreground text-white" rotate={2}>Team</Stamp>
+              <Stamp color="bg-foreground text-white" rotate={2}>{t("team.stamp")}</Stamp>
               <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5">
-                The humans<span className="text-foreground/30">.</span>
+                {t("team.title")}
               </h2>
             </In>
-
-            {/* Founder — big block */}
             <In className="mb-6">
               <Block hover={true} className="md:flex md:items-center md:gap-12">
                 <div className="flex items-start gap-6 md:w-1/3">
-                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-none border-2 border-foreground bg-kaixin flex items-center justify-center shadow-[3px_3px_0_0_#111] flex-shrink-0 stamp-alt">
+                  <div className="w-20 h-20 md:w-24 md:h-24 rounded-none border-2 border-foreground bg-kaixin flex items-center justify-center shadow-[3px_3px_0_0_#111] flex-shrink-0" style={{ transform: "rotate(2deg)" }}>
                     <span className="text-3xl md:text-4xl font-extrabold text-white">YW</span>
                   </div>
                   <div>
-                    <h3 className="text-2xl md:text-3xl font-extrabold uppercase tracking-tight">Yovi Widianto</h3>
-                    <Stamp color="bg-kaixin text-white border-foreground" rotate={-2}>Founder</Stamp>
+                    <h3 className="text-2xl md:text-3xl font-extrabold uppercase tracking-tight">{t("team.yovi.name")}</h3>
+                    <Stamp color="bg-kaixin text-white border-foreground" rotate={-2}>{t("team.founder.stamp")}</Stamp>
                   </div>
                 </div>
                 <div className="mt-6 md:mt-0 md:w-2/3">
-                  <p className="text-[15px] leading-[1.8] text-foreground/60 mb-6">
-                    Started Kaixin because he kept seeing talented teams build mediocre products. Believes the best code is the code you never think about. Previously shipped products used by millions across Southeast Asia.
-                  </p>
+                  <p className="text-[15px] leading-[1.8] text-foreground/60 mb-6">{t("team.yovi.desc")}</p>
                   <div className="flex gap-2">
                     {["LinkedIn", "GitHub", "Twitter"].map((s) => (
                       <button key={s} className="px-3 py-2 text-[12px] font-bold uppercase tracking-wider border-2 border-foreground bg-white hover:bg-kaixin hover:text-white transition-colors shadow-[2px_2px_0_0_#111]">
@@ -409,17 +410,15 @@ export default function Page() {
                 </div>
               </Block>
             </In>
-
-            {/* Other team — row of blocks */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {team.filter(t => !t.founder).map((m) => (
-                <In key={m.name}>
+              {otherTeam.map((m) => (
+                <In key={m.initials}>
                   <Block hover={true} className="text-center group">
                     <div className="w-14 h-14 mx-auto border-2 border-foreground bg-secondary flex items-center justify-center mb-4 group-hover:bg-kaixin group-hover:text-white transition-colors shadow-[2px_2px_0_0_#111]">
                       <span className="font-bold text-[13px]">{m.initials}</span>
                     </div>
-                    <p className="font-bold text-[14px] uppercase tracking-tight">{m.name}</p>
-                    <p className="font-mono text-[10px] tracking-[0.15em] text-foreground/40 mt-1">{m.role}</p>
+                    <p className="font-bold text-[14px] uppercase tracking-tight">{t(m.nameKey)}</p>
+                    <p className="font-mono text-[10px] tracking-[0.15em] text-foreground/40 mt-1">{t(m.roleKey)}</p>
                   </Block>
                 </In>
               ))}
@@ -432,12 +431,12 @@ export default function Page() {
           <div className="max-w-[1400px] mx-auto px-6 md:px-10 text-center">
             <In>
               <h2 className="text-4xl md:text-[4.5rem] font-extrabold tracking-tight uppercase leading-[0.95]">
-                Got a project<span className="text-kaixin">?</span>
+                {t("cta.title")}
               </h2>
-              <p className="text-foreground/50 text-[15px] mt-4 max-w-md mx-auto">Drop us a line. We reply within 24 hours. No sales pitch, we promise.</p>
+              <p className="text-foreground/50 text-[15px] mt-4 max-w-md mx-auto">{t("cta.desc")}</p>
               <div className="mt-8 flex justify-center gap-4">
                 <a href="#contact" className="inline-flex items-center gap-2 bg-kaixin text-white px-6 py-3.5 font-bold text-[13px] uppercase tracking-wider border-2 border-foreground shadow-[4px_4px_0_0_#111] hover:shadow-[2px_2px_0_0_#111] hover:translate-x-[2px] hover:translate-y-[2px] transition-all">
-                  Let&rsquo;s Talk
+                  {t("cta.btn")}
                   <ArrowUpRight className="w-4 h-4" />
                 </a>
               </div>
@@ -451,13 +450,13 @@ export default function Page() {
             <div className="grid md:grid-cols-2 gap-10 md:gap-16">
               <div>
                 <In>
-                  <Stamp color="bg-kaixin text-white border-white" rotate={-2}>Contact</Stamp>
+                  <Stamp color="bg-kaixin text-white border-white" rotate={-2}>{t("con.stamp")}</Stamp>
                   <h2 className="text-3xl md:text-[3rem] font-extrabold tracking-tight uppercase mt-5 text-white">
-                    Write us<span className="text-kaixin">.</span>
+                    {t("con.title")}
                   </h2>
                 </In>
                 <In delay={0.1} className="mt-10 space-y-5">
-                  <p className="text-white/50 text-[15px] leading-relaxed max-w-sm">Project, idea, or rough sketch. We read every message. Reply within 24 hours.</p>
+                  <p className="text-white/50 text-[15px] leading-relaxed max-w-sm">{t("con.desc")}</p>
                   <div className="space-y-3">
                     {[
                       { icon: Mail, label: "hello@kaixin.tech" },
@@ -471,30 +470,29 @@ export default function Page() {
                   </div>
                 </In>
               </div>
-
               <In delay={0.15}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">Name</label>
-                      <Input name="name" placeholder="Your name" required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
+                      <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">{t("con.name")}</label>
+                      <Input name="name" placeholder={t("con.name.ph")} required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
                     </div>
                     <div>
-                      <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">Email</label>
-                      <Input name="email" type="email" placeholder="you@co.com" required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
+                      <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">{t("con.email")}</label>
+                      <Input name="email" type="email" placeholder={t("con.email.ph")} required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
                     </div>
                   </div>
                   <div>
-                    <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">Subject</label>
-                    <Input name="subject" placeholder="What's this about?" required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
+                    <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">{t("con.subject")}</label>
+                    <Input name="subject" placeholder={t("con.subject.ph")} required className="h-12 bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none" />
                   </div>
                   <div>
-                    <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">Message</label>
-                    <Textarea name="message" placeholder="Tell us everything." required rows={5} className="bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none resize-none" />
+                    <label className="block font-mono text-[11px] uppercase tracking-widest text-white/40 mb-2">{t("con.message")}</label>
+                    <Textarea name="message" placeholder={t("con.message.ph")} required rows={5} className="bg-transparent border-2 border-white text-white text-[15px] placeholder:text-white/30 focus:border-kaixin focus:ring-0 rounded-none shadow-none resize-none" />
                   </div>
                   <Button type="submit" disabled={sending} className="h-12 w-full sm:w-auto bg-kaixin hover:bg-kaixin-dark text-white text-[13px] font-bold uppercase tracking-wider px-8 border-2 border-white shadow-[3px_3px_0_0_rgba(255,255,255,0.3)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all gap-2">
                     {sending ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
-                    Send it
+                    {sending ? t("con.sending") : t("con.btn")}
                   </Button>
                 </form>
               </In>
@@ -510,7 +508,7 @@ export default function Page() {
             <Image src="/logo-kaixin.png" alt="" width={22} height={22} className="rounded border border-foreground" />
             <span className="text-[13px] font-bold uppercase tracking-wider">Kaixin</span>
           </div>
-          <p className="font-mono text-[11px] text-foreground/40 uppercase tracking-wider">© {new Date().getFullYear()} — Built with stubbornness</p>
+          <p className="font-mono text-[11px] text-foreground/40 uppercase tracking-wider">© {new Date().getFullYear()} — {t("ft.copy")}</p>
           <div className="flex gap-4">
             {["Twitter", "GitHub", "LinkedIn"].map((s) => (
               <a key={s} href="#" className="font-mono text-[11px] text-foreground/40 uppercase tracking-wider hover:text-kaixin transition-colors">{s}</a>
@@ -519,7 +517,6 @@ export default function Page() {
         </div>
       </footer>
 
-      {/* Back to top */}
       <motion.button
         initial={{ opacity: 0, scale: 0.8 }}
         animate={showTop ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}

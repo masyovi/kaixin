@@ -67,3 +67,32 @@ Stage Summary:
 - Scored 8/10 on VLM uniqueness assessment (up from 3/10 → 7/10 → 8/10)
 - Key brutalist elements: thick borders, offset shadows, stamps, grid bg, mono labels, uppercase type, push-button interactions
 - "Distinctive and memorable" with "confident, confrontational messaging"
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Add bilingual support (EN/ID) with language toggle
+
+Work Log:
+- Created src/lib/i18n.tsx with I18nProvider context and useI18n hook
+- Built comprehensive translation dictionary with 100+ keys covering all sections
+- Indonesian translations use natural casual language (nggak, beneran, capek, ilang, etc.)
+- Wrapped app in I18nProvider in layout.tsx
+- Created LangToggle component with Globe icon and push-button brutalist style
+- LangToggle placed in navbar (desktop) and mobile header
+- Replaced all hardcoded strings in page.tsx with t() calls
+- Services, projects, team, philosophy cards use key-based lookup
+- About section split-sentence translations for bold/name highlighting
+- Toast messages also translated
+- Footer tagline translated
+- Verified with Agent Browser: clicked ID button → all text switched to Indonesian
+- Verified with Agent Browser: clicked EN button → text switched back to English
+- VLM confirmed: "All key text elements are in Indonesian, and the language toggle remains present"
+- ESLint passes clean
+
+Stage Summary:
+- Full bilingual support added without page reload (client-side context)
+- 100+ translation keys for EN and ID
+- Language toggle button in navbar with brutalist styling
+- Indonesian translations use natural, casual Bahasa Indonesia
+- Zero routing changes needed — pure client-side language switching
