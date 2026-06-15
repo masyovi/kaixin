@@ -672,17 +672,23 @@ export default function Page() {
               >
                 <Tape color="mud" />
                 <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-10 mt-2">
-                  {/* Avatar */}
+                  {/* Avatar — founder photo */}
                   <div className="relative flex-shrink-0">
                     <div
-                      className="w-20 h-20 bg-kaixin flex items-center justify-center"
+                      className="w-24 h-28 overflow-hidden"
                       style={{
                         clipPath: "polygon(2% 0%, 100% 0%, 98% 100%, 0% 100%)",
+                        boxShadow: "3px 3px 0 #CC5200",
                       }}
                     >
-                      <span className="text-3xl font-bold text-white font-[family-name:var(--font-playfair)] italic">
-                        YW
-                      </span>
+                      <Image
+                        src="/founder-yovi.png"
+                        alt={t("team.yovi.name")}
+                        width={96}
+                        height={112}
+                        className="w-full h-full object-cover object-top"
+                        priority
+                      />
                     </div>
                     <div className="absolute -bottom-2 -right-2 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border-2 border-foreground shadow-sm" style={{ transform: "rotate(3deg)" }}>
                       {t("team.founder.stamp")}
