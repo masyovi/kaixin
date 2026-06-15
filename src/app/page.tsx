@@ -585,9 +585,8 @@ export default function Page() {
                     <span className="handmark font-semibold text-foreground">{t("abt.p1.bold")}</span>{" "}
                     {t("abt.p1.rest")}
                   </p>
-                  <p>
-                    {t("abt.p2")}{" "}
-                    <span className="font-semibold text-foreground">{t("abt.p2.bold")}</span>.{" "}
+                  <p>{t("abt.p2")}</p>
+                  <p className="italic font-[family-name:var(--font-playfair)] text-foreground/60">
                     {t("abt.p2.end")}
                   </p>
                 </Reveal>
