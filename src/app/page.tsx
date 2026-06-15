@@ -1,22 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
-  Menu,
-  X,
   Mail,
   MapPin,
   Send,
-  ChevronDown,
+  X,
   Sparkles,
-  Code2,
-  Palette,
-  Server,
-  Smartphone,
-  BrainCircuit,
-  PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,85 +17,58 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/lib/i18n";
 import Image from "next/image";
 
-/* ═══════════════ ANIMATION HELPERS ═══════════════ */
+/* ═══════════════ ANIMATIONS ═══════════════ */
 
-function FadeUp({
+function Reveal({
   children,
   delay = 0,
   className = "",
-  once = true,
+  y = 20,
 }: {
   children: React.ReactNode;
   delay?: number;
   className?: string;
-  once?: boolean;
+  y?: number;
 }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once, margin: "-60px" });
+  const visible = useInView(ref, { once: true, margin: "-40px" });
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.7, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-function FadeIn({
-  children,
-  delay = 0,
-  className = "",
-  direction = "left",
-}: {
-  children: React.ReactNode;
-  delay?: number;
-  className?: string;
-  direction?: "left" | "right";
-}) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-40px" });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{
-        opacity: 0,
-        x: direction === "left" ? -40 : 40,
-      }}
-      animate={
-        isInView ? { opacity: 1, x: 0 } : {}
-      }
-      transition={{ duration: 0.8, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-function StaggerChild({
-  children,
-  index = 0,
-  className = "",
-}: {
-  children: React.ReactNode;
-  index?: number;
-  className?: string;
-}) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-30px" });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 24, scale: 0.97 }}
-      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      initial={{ opacity: 0, y }}
+      animate={visible ? { opacity: 1, y: 0 } : {}}
       transition={{
-        duration: 0.6,
-        delay: index * 0.1,
-        ease: [0.25, 0.46, 0.45, 0.94],
+        duration: 0.5,
+        delay,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function Pop({
+  children,
+  delay = 0,
+  className = "",
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) {
+  const ref = useRef(null);
+  const visible = useInView(ref, { once: true, margin: "-30px" });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, scale: 0.9, rotate: -1 }}
+      animate={visible ? { opacity: 1, scale: 1, rotate: 0 } : {}}
+      transition={{
+        duration: 0.5,
+        delay,
+        ease: [0.34, 1.56, 0.64, 1],
       }}
       className={className}
     >
@@ -115,62 +80,79 @@ function StaggerChild({
 function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [n, setN] = useState(0);
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
+  const visible = useInView(ref, { once: true });
   useEffect(() => {
-    if (!isInView) return;
-    let current = 0;
-    const step = target / 60;
-    const timer = setInterval(() => {
-      current += step;
-      if (current >= target) {
-        setN(target);
-        clearInterval(timer);
-      } else {
-        setN(Math.floor(current));
-      }
+    if (!visible) return;
+    let c = 0;
+    const step = target / 50;
+    const t = setInterval(() => {
+      c += step;
+      if (c >= target) { setN(target); clearInterval(t); }
+      else setN(Math.floor(c));
     }, 25);
-    return () => clearInterval(timer);
-  }, [isInView, target]);
-  return <span ref={ref}>{n.toLocaleString()}{suffix}</span>;
+    return () => clearInterval(t);
+  }, [visible, target]);
+  return <span ref={ref}>{n}{suffix}</span>;
 }
 
-/* ═══════════════ DECORATIVE BLOBS ═══════════════ */
+/* ═══════════════ SVG DOODLES ═══════════════ */
 
-function OrangeBlob({ className = "" }: { className?: string }) {
+function SquiggleLine({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 400 12" className={`w-full h-3 ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 6C30 2 50 10 80 6C110 2 130 10 160 6C190 2 210 10 240 6C270 2 290 10 320 6C350 2 370 10 398 6" stroke="#C4B99A" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ArrowDoodle({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 20" className={`w-10 h-5 ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 10H35M28 4L36 10L28 16" stroke="#FF6600" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function StarDoodle({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" className={`w-5 h-5 ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 1L12.5 7.5L19 8L14 12.5L15.5 19L10 15.5L4.5 19L6 12.5L1 8L7.5 7.5L10 1Z" stroke="#FF6600" strokeWidth="1.2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CircleDoodle({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={`w-4 h-4 ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="8" cy="8" r="6" stroke="#C4B99A" strokeWidth="1.2" strokeDasharray="3 3" />
+    </svg>
+  );
+}
+
+/* ═══════════════ TAPE COMPONENT ═══════════════ */
+
+function Tape({ color = "orange" }: { color?: "orange" | "mud" }) {
+  const bg = color === "orange" ? "rgba(255,102,0,0.12)" : "rgba(196,185,154,0.3)";
+  const border = color === "orange" ? "rgba(255,102,0,0.15)" : "rgba(196,185,154,0.5)";
   return (
     <div
-      className={`absolute rounded-full animate-blob pointer-events-none ${className}`}
-      style={{
-        background:
-          "radial-gradient(circle, rgba(255,102,0,0.15) 0%, rgba(255,102,0,0) 70%)",
-      }}
+      className="absolute -top-2 left-1/2 -translate-x-1/2 w-14 h-4 rounded-sm z-10"
+      style={{ background: bg, border: `1px solid ${border}`, transform: `translateX(-50%) rotate(-1.5deg)` }}
     />
   );
 }
 
-function OrangeBlobAlt({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`absolute rounded-full animate-blob-delay pointer-events-none ${className}`}
-      style={{
-        background:
-          "radial-gradient(circle, rgba(255,102,0,0.1) 0%, rgba(255,102,0,0) 70%)",
-      }}
-    />
-  );
-}
-
-/* ═══════════════ LANGUAGE TOGGLE ═══════════════ */
+/* ═══════════════ LANG TOGGLE ═══════════════ */
 
 function LangToggle() {
   const { locale, setLocale } = useI18n();
   const toggle = () => setLocale(locale === "en" ? "id" : "en");
   const label = locale === "en" ? "ID" : "EN";
-
   return (
     <button
       onClick={toggle}
-      className="relative w-9 h-9 rounded-full glass glass-hover flex items-center justify-center text-xs font-bold tracking-wider transition-all duration-300 hover:scale-105"
+      className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest border-2 border-foreground bg-paper hover:bg-kaixin hover:text-white hover:border-kaixin transition-all duration-200"
+      style={{ transform: "rotate(1deg)" }}
       aria-label={`Switch to ${label}`}
     >
       {label}
@@ -188,20 +170,14 @@ export default function Page() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    const h = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", h, { passive: true });
+    return () => window.removeEventListener("scroll", h);
   }, []);
 
   useEffect(() => {
-    if (menuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -213,100 +189,42 @@ export default function Page() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: fd.get("name"),
-          email: fd.get("email"),
-          subject: fd.get("subject"),
-          message: fd.get("message"),
+          name: fd.get("name"), email: fd.get("email"),
+          subject: fd.get("subject"), message: fd.get("message"),
         }),
       });
       if (!res.ok) throw new Error();
       toast({ title: t("toast.sent"), description: t("toast.sent.desc") });
       e.currentTarget.reset();
     } catch {
-      toast({
-        title: t("toast.error"),
-        description: t("toast.error.desc"),
-        variant: "destructive",
-      });
-    } finally {
-      setSending(false);
-    }
+      toast({ title: t("toast.error"), description: t("toast.error.desc"), variant: "destructive" });
+    } finally { setSending(false); }
   };
 
   const services = [
-    {
-      icon: Palette,
-      titleKey: "svc.01.title",
-      descKey: "svc.01.desc",
-      tools: ["Figma", "Prototyping", "Design Systems"],
-    },
-    {
-      icon: Code2,
-      titleKey: "svc.02.title",
-      descKey: "svc.02.desc",
-      tools: ["React", "Next.js", "TypeScript"],
-    },
-    {
-      icon: BrainCircuit,
-      titleKey: "svc.03.title",
-      descKey: "svc.03.desc",
-      tools: ["OpenAI", "LangChain", "Python"],
-    },
-    {
-      icon: Server,
-      titleKey: "svc.04.title",
-      descKey: "svc.04.desc",
-      tools: ["AWS", "Terraform", "Kubernetes"],
-    },
-    {
-      icon: Smartphone,
-      titleKey: "svc.05.title",
-      descKey: "svc.05.desc",
-      tools: ["Swift", "Kotlin", "React Native"],
-    },
-    {
-      icon: PenTool,
-      titleKey: "svc.06.title",
-      descKey: "svc.06.desc",
-      tools: ["Strategy", "Visual ID", "Motion"],
-    },
+    { titleKey: "svc.01.title", descKey: "svc.01.desc", tools: ["Figma", "Prototype", "Design System"], emoji: "🎨" },
+    { titleKey: "svc.02.title", descKey: "svc.02.desc", tools: ["React", "Next.js", "TypeScript"], emoji: "⚡" },
+    { titleKey: "svc.03.title", descKey: "svc.03.desc", tools: ["OpenAI", "LangChain", "Python"], emoji: "🧠" },
+    { titleKey: "svc.04.title", descKey: "svc.04.desc", tools: ["AWS", "Docker", "K8s"], emoji: "🛠" },
+    { titleKey: "svc.05.title", descKey: "svc.05.desc", tools: ["Swift", "Kotlin", "RN"], emoji: "📱" },
+    { titleKey: "svc.06.title", descKey: "svc.06.desc", tools: ["Strategy", "Visual ID", "Motion"], emoji: "✏️" },
   ];
 
   const projects = [
-    {
-      tagKey: "prj.01.tag",
-      titleKey: "prj.01.title",
-      year: "24",
-      color: "from-orange-500/20 to-red-500/20",
-    },
-    {
-      tagKey: "prj.02.tag",
-      titleKey: "prj.02.title",
-      year: "24",
-      color: "from-emerald-500/20 to-teal-500/20",
-    },
-    {
-      tagKey: "prj.03.tag",
-      titleKey: "prj.03.title",
-      year: "24",
-      color: "from-violet-500/20 to-purple-500/20",
-    },
-    {
-      tagKey: "prj.04.tag",
-      titleKey: "prj.04.title",
-      year: "23",
-      color: "from-sky-500/20 to-cyan-500/20",
-    },
+    { tagKey: "prj.01.tag", titleKey: "prj.01.title", year: "24", note: "+340% konversi" },
+    { tagKey: "prj.02.tag", titleKey: "prj.02.title", year: "24", note: "50K sesi/bulan" },
+    { tagKey: "prj.03.tag", titleKey: "prj.03.title", year: "24", note: "2M+ pengguna" },
+    { tagKey: "prj.04.tag", titleKey: "prj.04.title", year: "23", note: "400+ enterprise" },
   ];
 
-  const otherTeam = [
-    { nameKey: "team.sarah.name", roleKey: "team.sarah.role", initials: "SC", color: "from-pink-500 to-rose-500" },
-    { nameKey: "team.budi.name", roleKey: "team.budi.role", initials: "BS", color: "from-blue-500 to-indigo-500" },
-    { nameKey: "team.linda.name", roleKey: "team.linda.role", initials: "LK", color: "from-emerald-500 to-teal-500" },
-    { nameKey: "team.reza.name", roleKey: "team.reza.role", initials: "RP", color: "from-amber-500 to-orange-500" },
+  const team = [
+    { nameKey: "team.sarah.name", roleKey: "team.sarah.role", initials: "SC" },
+    { nameKey: "team.budi.name", roleKey: "team.budi.role", initials: "BS" },
+    { nameKey: "team.linda.name", roleKey: "team.linda.role", initials: "LK" },
+    { nameKey: "team.reza.name", roleKey: "team.reza.role", initials: "RP" },
   ];
 
-  const navItems = [
+  const nav = [
     { label: t("nav.work"), href: "#work" },
     { label: t("nav.about"), href: "#about" },
     { label: t("nav.team"), href: "#team" },
@@ -314,682 +232,677 @@ export default function Page() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* ═══════════ NAV ═══════════ */}
-      <motion.header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
+      <header
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-background/80 backdrop-blur-xl border-b border-border"
+            ? "bg-paper/90 backdrop-blur-md border-b border-border shadow-sm"
             : "bg-transparent"
         }`}
       >
-        <nav className="max-w-6xl mx-auto px-6 lg:px-8 flex items-center justify-between h-18">
-          <a href="#" className="flex items-center gap-3 group">
-            <div className="relative">
-              <div className="absolute -inset-1 rounded-full bg-kaixin/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <Image
-                src="/logo-kaixin.png"
-                alt="Kaixin"
-                width={34}
-                height={34}
-                className="relative rounded-full"
-              />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">
+        <nav className="max-w-5xl mx-auto px-6 flex items-center justify-between h-16">
+          <a href="#" className="flex items-center gap-2 group">
+            <Image
+              src="/logo-kaixin.png"
+              alt="Kaixin"
+              width={30}
+              height={30}
+              className="rounded-sm transition-transform duration-300 group-hover:rotate-[-6deg]"
+            />
+            <span className="font-[family-name:var(--font-playfair)] text-xl font-semibold italic tracking-tight">
               Kaixin
             </span>
           </a>
 
           <div className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => (
+            {nav.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className="px-4 py-2 text-sm text-foreground/60 hover:text-foreground rounded-full hover:bg-white/5 transition-all duration-300"
+                className="px-3 py-1.5 text-[13px] font-medium text-foreground/60 hover:text-foreground hover:bg-kaixin/10 rounded-md transition-all duration-200"
               >
                 {item.label}
               </a>
             ))}
-            <div className="ml-3">
-              <LangToggle />
-            </div>
-            <a
-              href="#contact"
-              className="ml-3 px-5 py-2.5 text-sm font-medium bg-kaixin hover:bg-kaixin-light text-white rounded-full transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,102,0,0.3)]"
-            >
-              {t("cta.btn")}
-            </a>
+            <div className="ml-2"><LangToggle /></div>
           </div>
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden w-10 h-10 rounded-full glass flex items-center justify-center"
+            className="md:hidden w-9 h-9 rough-border flex items-center justify-center text-sm transition-all duration-200"
             aria-label="Menu"
           >
-            {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {menuOpen ? <X className="w-4 h-4" /> : <span className="text-lg font-bold">☰</span>}
           </button>
         </nav>
-      </motion.header>
+      </header>
 
       {/* ═══════════ MOBILE MENU ═══════════ */}
-      <motion.div
-        className={`fixed inset-0 z-40 bg-background/95 backdrop-blur-2xl flex flex-col items-center justify-center gap-8 md:hidden ${
-          menuOpen ? "pointer-events-auto" : "pointer-events-none"
-        }`}
-        initial={false}
-        animate={
-          menuOpen
-            ? { opacity: 1 }
-            : { opacity: 0 }
-        }
-        transition={{ duration: 0.3 }}
-      >
-        {navItems.map((item, i) => (
-          <motion.a
-            key={item.href}
-            href={item.href}
-            onClick={() => setMenuOpen(false)}
-            className="text-2xl font-semibold tracking-tight text-foreground/80 hover:text-kaixin transition-colors"
-            initial={false}
-            animate={menuOpen ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
-            transition={{ delay: i * 0.08, duration: 0.4 }}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            className="fixed inset-0 z-40 bg-paper flex flex-col items-center justify-center gap-8 md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
           >
-            {item.label}
-          </motion.a>
-        ))}
-        <motion.div
-          initial={false}
-          animate={menuOpen ? { opacity: 1 } : { opacity: 0 }}
-          transition={{ delay: 0.35 }}
-          className="mt-4"
-        >
-          <LangToggle />
-        </motion.div>
-      </motion.div>
+            {nav.map((item, i) => (
+              <motion.a
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className="text-2xl font-[family-name:var(--font-playfair)] font-semibold italic"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: i * 0.06 }}
+              >
+                {item.label}
+              </motion.a>
+            ))}
+            <LangToggle />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="flex-1">
         {/* ═══════════ HERO ═══════════ */}
-        <section className="relative min-h-screen flex items-center overflow-hidden">
-          {/* Background blobs */}
-          <OrangeBlob className="w-[500px] h-[500px] -top-40 -right-40" />
-          <OrangeBlobAlt className="w-[400px] h-[400px] top-1/2 -left-32" />
-          <div
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] opacity-30 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(ellipse at center, rgba(255,102,0,0.08) 0%, transparent 60%)",
-            }}
-          />
+        <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
+          {/* Dot grid background */}
+          <div className="absolute inset-0 dot-grid pointer-events-none" />
 
-          {/* Grid pattern */}
-          <div
-            className="absolute inset-0 opacity-[0.02] pointer-events-none"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
-              backgroundSize: "60px 60px",
-            }}
-          />
-
-          <div className="relative max-w-6xl mx-auto px-6 lg:px-8 pt-32 pb-20 w-full">
-            <div className="max-w-3xl">
-              {/* Eyebrow */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="flex items-center gap-3 mb-8"
-              >
-                <div className="h-px w-8 bg-kaixin" />
-                <span className="text-sm font-medium text-foreground/50 tracking-wider uppercase">
-                  {t("hero.stamp.est")} — {t("hero.stamp.jakarta")}
-                </span>
-              </motion.div>
-
-              {/* Headline */}
-              <motion.h1
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.1 }}
-                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[1.05] tracking-tight"
-              >
-                <span className="text-gradient-subtle">{t("hero.line1")}</span>
-                <br />
-                <span className="text-gradient-subtle">{t("hero.line2")}</span>
-                <br />
-                <span className="text-gradient-orange">{t("hero.highlight")}</span>
-                <span className="text-kaixin">.</span>
-              </motion.h1>
-
-              {/* Description */}
-              <motion.p
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="mt-8 text-lg text-foreground/50 max-w-lg leading-relaxed"
-              >
-                {t("hero.desc")}
-              </motion.p>
-
-              {/* CTA */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.45 }}
-                className="mt-10 flex flex-wrap items-center gap-4"
-              >
-                <a
-                  href="#work"
-                  className="group inline-flex items-center gap-2.5 px-7 py-3.5 bg-kaixin hover:bg-kaixin-light text-white font-medium rounded-full transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,102,0,0.3)]"
-                >
-                  {t("hero.cta")}
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                </a>
-                <a
-                  href="#about"
-                  className="inline-flex items-center gap-2.5 px-7 py-3.5 glass glass-hover rounded-full font-medium text-sm transition-all duration-300"
-                >
-                  {t("nav.about")}
-                </a>
-              </motion.div>
-            </div>
-
-            {/* Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.6 }}
-              className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4"
-            >
-              {[
-                { label: t("stat.projects"), value: "200+", suffix: "" },
-                { label: t("stat.retention"), value: 98, suffix: "%" },
-                { label: t("stat.team"), value: 15, suffix: "+" },
-                { label: t("stat.rating"), value: 4.9, suffix: "/5" },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="glass rounded-2xl p-5 text-center group hover:border-kaixin/20 transition-all duration-300"
-                >
-                  <div className="text-2xl md:text-3xl font-bold text-foreground">
-                    {typeof stat.value === "number" ? (
-                      <CountUp target={stat.value} suffix={stat.suffix} />
-                    ) : (
-                      stat.value
-                    )}
+          <div className="relative max-w-5xl mx-auto px-6">
+            <div className="grid md:grid-cols-12 gap-8 md:gap-6 items-start">
+              {/* Left: Big text */}
+              <div className="md:col-span-7 relative">
+                {/* Decorative tape on top */}
+                <Reveal>
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="sticker">{t("hero.stamp.est")}</div>
+                    <div className="w-2 h-2 rounded-full bg-kaixin" />
+                    <span className="text-[13px] font-mono text-foreground/40 tracking-wider">
+                      {t("hero.stamp.jakarta")}
+                    </span>
                   </div>
-                  <div className="text-xs text-foreground/40 mt-1.5 font-medium tracking-wider uppercase">
-                    {stat.label}
+                </Reveal>
+
+                <Reveal delay={0.1}>
+                  <h1 className="text-[clamp(2.8rem,8vw,6rem)] font-bold leading-[0.92] tracking-tight font-[family-name:var(--font-playfair)]">
+                    <span className="inline-block" style={{ transform: "rotate(-0.5deg)" }}>
+                      {t("hero.line1")}
+                    </span>
+                    <br />
+                    <span className="inline-block" style={{ transform: "rotate(0.3deg)" }}>
+                      {t("hero.line2")}
+                    </span>
+                    <br />
+                    <span className="relative inline-block text-kaixin" style={{ transform: "rotate(-0.8deg)" }}>
+                      {t("hero.highlight")}
+                      <svg className="absolute -bottom-2 left-0 w-full h-3" viewBox="0 0 100 10" preserveAspectRatio="none" fill="none">
+                        <path d="M1 7C15 3, 30 9, 50 5C70 1, 85 8, 99 4" stroke="#FF6600" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    </span>
+                    <span className="text-foreground/30">.</span>
+                  </h1>
+                </Reveal>
+
+                <Reveal delay={0.25}>
+                  <p className="mt-8 text-[15px] text-foreground/50 max-w-md leading-relaxed">
+                    {t("hero.desc")}
+                  </p>
+                </Reveal>
+
+                <Reveal delay={0.35}>
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    <a
+                      href="#work"
+                      className="group inline-flex items-center gap-2 rough-border px-5 py-3 bg-white text-[13px] font-bold uppercase tracking-wider card-lift"
+                    >
+                      {t("hero.cta")}
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </a>
+                    <a
+                      href="#about"
+                      className="inline-flex items-center gap-2 px-5 py-3 text-[13px] font-medium text-foreground/50 hover:text-foreground hover:bg-kaixin/5 rounded transition-all duration-200"
+                    >
+                      {t("nav.about")}
+                    </a>
                   </div>
+                </Reveal>
+
+                {/* Decorative elements */}
+                <StarDoodle className="absolute -top-6 -right-4 md:right-8 opacity-40 rotate-12" />
+                <CircleDoodle className="absolute top-1/2 -right-8 opacity-30" />
+              </div>
+
+              {/* Right: Bento stat cards */}
+              <div className="md:col-span-5">
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: t("stat.projects"), value: "200+", suffix: "" },
+                    { label: t("stat.retention"), value: 98, suffix: "%" },
+                    { label: t("stat.team"), value: 15, suffix: "+" },
+                    { label: t("stat.rating"), value: 4.9, suffix: "/5" },
+                  ].map((stat, i) => (
+                    <Pop key={stat.label} delay={0.15 + i * 0.08} className="col-span-1">
+                      <div
+                        className="relative bg-white p-4 card-lift rough-border"
+                        style={{ transform: `rotate(${(i % 2 === 0 ? -0.5 : 0.8) + (i * 0.3)}deg)` }}
+                      >
+                        <div className="text-2xl font-bold font-mono">
+                          {typeof stat.value === "number" ? (
+                            <CountUp target={stat.value} suffix={stat.suffix} />
+                          ) : (
+                            <span>{stat.value}</span>
+                          )}
+                        </div>
+                        <div className="text-[10px] font-mono uppercase tracking-widest text-foreground/35 mt-1">
+                          {stat.label}
+                        </div>
+                      </div>
+                    </Pop>
+                  ))}
+
+                  {/* Big orange card */}
+                  <Pop delay={0.5} className="col-span-2">
+                    <div className="relative bg-kaixin text-white p-6 rough-border" style={{ boxShadow: "3px 3px 0 #CC5200" }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <StarDoodle className="w-4 h-4 opacity-60" />
+                        <span className="text-[10px] font-mono uppercase tracking-widest opacity-60">Kaixin 开心</span>
+                      </div>
+                      <p className="text-sm leading-snug opacity-90 font-[family-name:var(--font-playfair)] italic">
+                        {t("abt.p2.bold")} = {t("abt.p2.bold")}
+                      </p>
+                      <p className="text-[11px] mt-2 opacity-50">
+                        That&apos;s the bar.
+                      </p>
+                    </div>
+                  </Pop>
                 </div>
-              ))}
-            </motion.div>
+              </div>
+            </div>
           </div>
 
-          {/* Scroll indicator */}
-          <motion.div
-            className="absolute bottom-10 left-1/2 -translate-x-1/2"
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <ChevronDown className="w-5 h-5 text-foreground/20" />
-          </motion.div>
+          {/* Doodle decorations */}
+          <ArrowDoodle className="absolute bottom-8 left-[10%] opacity-30 rotate-12" />
+          <CircleDoodle className="absolute top-40 right-[5%] opacity-20" />
+          <StarDoodle className="absolute bottom-20 right-[15%] opacity-25 -rotate-12" />
         </section>
 
-        {/* ═══════════ SERVICES ═══════════ */}
-        <section id="work" className="relative py-28 md:py-36">
-          <OrangeBlob className="w-[400px] h-[400px] top-20 -right-32" />
+        {/* Wavy divider */}
+        <div className="w-full px-6">
+          <SquiggleLine />
+        </div>
 
-          <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
-            <FadeUp className="mb-16 md:mb-20">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-kaixin/10 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-kaixin" />
-                </div>
-                <span className="text-sm font-medium text-kaixin tracking-wider uppercase">
+        {/* ═══════════ SERVICES ═══════════ */}
+        <section id="work" className="relative py-20 md:py-28">
+          <div className="max-w-5xl mx-auto px-6">
+            <Reveal className="mb-14">
+              <div className="flex items-center gap-3 mb-3">
+                <StarDoodle />
+                <span className="text-[11px] font-mono uppercase tracking-widest text-foreground/40">
                   {t("svc.stamp")}
                 </span>
               </div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
-                {t("svc.title")}
-              </h2>
-              <p className="text-foreground/40 mt-2 text-lg">{t("svc.subtitle")}</p>
-            </FadeUp>
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+                <h2 className="text-3xl md:text-[2.8rem] font-bold font-[family-name:var(--font-playfair)] leading-tight">
+                  {t("svc.title")}{" "}
+                  <span className="text-foreground/25 text-2xl md:text-[2rem]">{t("svc.subtitle")}</span>
+                </h2>
+                <ArrowDoodle className="hidden md:block opacity-40" />
+              </div>
+            </Reveal>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {services.map((service, i) => (
-                <StaggerChild key={i} index={i}>
-                  <div className="glass glass-hover rounded-2xl p-6 h-full group cursor-pointer transition-all duration-500 hover:shadow-[0_8px_40px_rgba(255,102,0,0.06)]">
-                    <div className="flex items-center justify-between mb-5">
-                      <div className="w-10 h-10 rounded-xl bg-kaixin/10 flex items-center justify-center group-hover:bg-kaixin/20 transition-colors duration-300">
-                        <service.icon className="w-5 h-5 text-kaixin" />
-                      </div>
-                      <ArrowRight className="w-4 h-4 text-foreground/15 group-hover:text-kaixin group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2 group-hover:text-kaixin transition-colors duration-300">
-                      {t(service.titleKey)}
-                    </h3>
-                    <p className="text-sm text-foreground/40 leading-relaxed mb-5">
-                      {t(service.descKey)}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {service.tools.map((tool) => (
-                        <span
-                          key={tool}
-                          className="px-2.5 py-1 text-[11px] font-medium rounded-full bg-white/5 text-foreground/40 border border-white/5"
-                        >
-                          {tool}
+            {/* Masonry-like service cards */}
+            <div className="grid md:grid-cols-3 gap-4">
+              {services.map((svc, i) => {
+                const rotations = [-0.3, 0.5, -0.2, 0.4, -0.6, 0.3];
+                const heights = [
+                  "md:row-span-1",
+                  "md:row-span-1",
+                  "md:row-span-1",
+                  "md:row-span-1",
+                  "md:row-span-1",
+                  "md:row-span-1",
+                ];
+                return (
+                  <Pop key={i} delay={i * 0.06} className={heights[i]}>
+                    <div
+                      className="relative bg-white p-5 rough-border card-lift h-full group cursor-pointer"
+                      style={{ transform: `rotate(${rotations[i]}deg)` }}
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <span className="text-2xl" role="img" aria-hidden="true">{svc.emoji}</span>
+                        <span className="text-[10px] font-mono text-foreground/20 tracking-wider">
+                          0{i + 1}
                         </span>
-                      ))}
+                      </div>
+                      <h3 className="text-base font-bold mb-1.5 group-hover:text-kaixin transition-colors">
+                        {t(svc.titleKey)}
+                      </h3>
+                      <p className="text-[13px] text-foreground/40 leading-relaxed mb-4">
+                        {t(svc.descKey)}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {svc.tools.map((tool) => (
+                          <span
+                            key={tool}
+                            className="px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider bg-paper text-foreground/50 rounded-sm border border-mud-light/50"
+                          >
+                            {tool}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </StaggerChild>
-              ))}
+                  </Pop>
+                );
+              })}
             </div>
           </div>
+
+          {/* Doodles */}
+          <CircleDoodle className="absolute top-32 -left-4 opacity-20 rotate-45" />
+          <StarDoodle className="absolute bottom-20 -right-2 opacity-20" />
         </section>
 
-        {/* ═══════════ PROJECTS (Horizontal Scroll) ═══════════ */}
-        <section className="relative py-28 md:py-36 overflow-hidden">
-          <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
-            <FadeUp className="mb-12">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-kaixin/10 flex items-center justify-center">
-                  <ArrowRight className="w-4 h-4 text-kaixin -rotate-45" />
-                </div>
-                <span className="text-sm font-medium text-kaixin tracking-wider uppercase">
+        {/* ═══════════ PROJECTS ═══════════ */}
+        <section className="relative py-16 md:py-24 bg-foreground text-paper overflow-hidden">
+          {/* Dot grid on dark */}
+          <div className="absolute inset-0 opacity-10" style={{
+            backgroundImage: "radial-gradient(circle, #C4B99A 0.8px, transparent 0.8px)",
+            backgroundSize: "24px 24px",
+          }} />
+
+          <div className="relative max-w-5xl mx-auto px-6">
+            <Reveal className="mb-12">
+              <div className="flex items-center gap-3 mb-3">
+                <StarDoodle className="!text-paper opacity-40" />
+                <span className="text-[11px] font-mono uppercase tracking-widest text-paper/30">
                   {t("prj.stamp")}
                 </span>
               </div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+              <h2 className="text-3xl md:text-[2.8rem] font-bold font-[family-name:var(--font-playfair)] text-paper">
                 {t("prj.title")}
               </h2>
-            </FadeUp>
-          </div>
+            </Reveal>
 
-          <div className="relative pl-6 lg:pl-[calc((100vw-72rem)/2+2rem)]">
-            <div className="flex gap-5 overflow-x-auto scroll-hide pb-4 pr-6">
+            <div className="flex gap-4 overflow-x-auto scroll-hide pb-4 -mx-6 px-6">
               {projects.map((project, i) => (
-                <StaggerChild key={i} index={i} className="flex-shrink-0">
-                  <div className="w-[340px] sm:w-[420px] rounded-2xl overflow-hidden glass glass-hover group cursor-pointer transition-all duration-500">
-                    {/* Gradient header */}
-                    <div
-                      className={`h-40 bg-gradient-to-br ${project.color} flex items-end p-6`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase rounded-full bg-white/10 text-white/80 backdrop-blur-sm">
-                          {t(project.tagKey)}
-                        </span>
-                        <span className="text-xs text-white/40 font-mono">
-                          {project.year}
-                        </span>
-                      </div>
+                <Pop key={i} delay={i * 0.08} className="flex-shrink-0 w-[300px] sm:w-[340px]">
+                  <div
+                    className="bg-paper text-foreground p-6 relative fold-corner h-full cursor-pointer card-lift"
+                    style={{
+                      transform: `rotate(${i % 2 === 0 ? -0.5 : 0.3}deg)`,
+                      boxShadow: `4px 4px 0 #CC5200`,
+                    }}
+                  >
+                    <Tape color="mud" />
+                    <div className="flex items-center justify-between mb-5 mt-2">
+                      <span className="sticker !bg-foreground !text-paper !shadow-none !rotate-0 text-[9px] px-2.5 py-1">
+                        {t(project.tagKey)}
+                      </span>
+                      <span className="text-[11px] font-mono text-foreground/25">{project.year}</span>
                     </div>
-                    <div className="p-6">
-                      <p className="text-base font-semibold leading-snug text-foreground/80 group-hover:text-foreground transition-colors duration-300">
-                        {t(project.titleKey)}
-                      </p>
-                      <div className="mt-4 flex items-center gap-2 text-xs font-medium text-kaixin/70 group-hover:text-kaixin transition-colors duration-300">
-                        {t("svc.case")}
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-300" />
-                      </div>
+                    <p className="text-[15px] font-bold leading-snug mb-4">
+                      {t(project.titleKey)}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-mono text-kaixin">{project.note}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-foreground/25" />
                     </div>
                   </div>
-                </StaggerChild>
+                </Pop>
               ))}
             </div>
-            {/* Fade edges */}
-            <div className="absolute right-0 top-0 bottom-4 w-20 bg-gradient-to-l from-background to-transparent pointer-events-none" />
           </div>
         </section>
 
         {/* ═══════════ ABOUT ═══════════ */}
-        <section id="about" className="relative py-28 md:py-36">
-          <OrangeBlobAlt className="w-[500px] h-[500px] -bottom-40 -left-40" />
-
-          <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-start">
-              <FadeIn direction="left">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-kaixin/10 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-kaixin" />
+        <section id="about" className="relative py-20 md:py-28">
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="grid md:grid-cols-12 gap-8">
+              {/* Left col */}
+              <div className="md:col-span-7">
+                <Reveal>
+                  <div className="flex items-center gap-3 mb-3">
+                    <StarDoodle />
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-foreground/40">
+                      {t("abt.stamp")}
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-kaixin tracking-wider uppercase">
-                    {t("abt.stamp")}
-                  </span>
-                </div>
-                <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight">
-                  {t("abt.title")} <br />
-                  <span className="text-foreground/40">{t("abt.title2")}</span>
-                </h2>
+                  <h2 className="text-3xl md:text-[2.8rem] font-bold font-[family-name:var(--font-playfair)] leading-tight mb-2">
+                    {t("abt.title")}
+                  </h2>
+                  <p className="text-foreground/25 text-xl font-[family-name:var(--font-playfair)] italic">
+                    {t("abt.title2")}
+                  </p>
+                </Reveal>
 
-                <div className="mt-8 space-y-5 text-foreground/50 leading-relaxed">
+                <Reveal delay={0.1} className="mt-8 space-y-5 text-[15px] text-foreground/50 leading-[1.85] max-w-lg">
                   <p>
                     {t("abt.p1")}{" "}
-                    <span className="text-foreground font-semibold">
-                      {t("abt.p1.bold")}
-                    </span>{" "}
+                    <span className="handmark font-semibold text-foreground">{t("abt.p1.bold")}</span>{" "}
                     {t("abt.p1.rest")}
                   </p>
                   <p>
                     {t("abt.p2")}{" "}
-                    <span className="text-foreground font-semibold">
-                      {t("abt.p2.bold")}
-                    </span>
-                    . {t("abt.p2.end")}
+                    <span className="font-semibold text-foreground">{t("abt.p2.bold")}</span>.{" "}
+                    {t("abt.p2.end")}
                   </p>
-                </div>
-              </FadeIn>
+                </Reveal>
 
-              <div className="space-y-6">
-                {/* Philosophy cards */}
-                <FadeIn direction="right">
-                  <div className="glass rounded-2xl p-6 glow-sm">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-2 h-2 rounded-full bg-kaixin animate-pulse" />
-                      <span className="text-xs font-medium text-kaixin tracking-wider uppercase">
-                        {t("dnd.title")}
-                      </span>
-                    </div>
-                    <div className="space-y-3">
-                      {["dnd.1", "dnd.2", "dnd.3", "dnd.4", "dnd.5"].map(
-                        (key) => (
-                          <div
-                            key={key}
-                            className="flex items-center gap-3 text-sm text-foreground/50"
-                          >
-                            <div className="w-5 h-5 rounded-full bg-kaixin/10 flex items-center justify-center flex-shrink-0">
-                              <X className="w-3 h-3 text-kaixin" />
-                            </div>
-                            {t(key)}
-                          </div>
-                        )
-                      )}
+                {/* Don't do list */}
+                <Reveal delay={0.2} className="mt-10">
+                  <div className="relative bg-white p-6 rough-border" style={{ transform: "rotate(0.3deg)" }}>
+                    <Tape />
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/30 mb-4 mt-1">
+                      {t("dnd.title")}
+                    </p>
+                    <div className="space-y-2.5">
+                      {["dnd.1", "dnd.2", "dnd.3", "dnd.4", "dnd.5"].map((key) => (
+                        <div key={key} className="flex items-center gap-2.5 text-[13px] text-foreground/50">
+                          <span className="text-kaixin text-sm">✕</span>
+                          {t(key)}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </FadeIn>
+                </Reveal>
+              </div>
 
-                {/* Philosophy statements */}
-                <FadeIn direction="right" delay={0.15}>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { labelKey: "ph.01.label", textKey: "ph.01.text", accent: true },
-                      { labelKey: "ph.02.label", textKey: "ph.02.text", accent: false },
-                      { labelKey: "ph.03.label", textKey: "ph.03.text", accent: false },
-                      { labelKey: "ph.04.label", textKey: "ph.04.text", accent: true },
-                    ].map((item, i) => (
-                      <div
-                        key={i}
-                        className={`rounded-2xl p-5 transition-all duration-300 hover:scale-[1.02] ${
-                          item.accent
-                            ? "bg-kaixin/10 border border-kaixin/15"
-                            : "glass"
-                        }`}
-                      >
-                        <p className="text-[10px] font-mono tracking-[0.15em] text-foreground/30 mb-2.5">
-                          {t(item.labelKey)}
-                        </p>
-                        <p className="text-sm font-medium leading-snug text-foreground/70">
-                          {t(item.textKey)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </FadeIn>
+              {/* Right col: Philosophy cards */}
+              <div className="md:col-span-5 space-y-3">
+                {[
+                  { labelKey: "ph.01.label", textKey: "ph.01.text", rot: -0.8, accent: true },
+                  { labelKey: "ph.02.label", textKey: "ph.02.text", rot: 0.5, accent: false },
+                  { labelKey: "ph.03.label", textKey: "ph.03.text", rot: -0.3, accent: false },
+                  { labelKey: "ph.04.label", textKey: "ph.04.text", rot: 0.7, accent: true },
+                ].map((item, i) => (
+                  <Pop key={i} delay={0.15 + i * 0.08}>
+                    <div
+                      className={`p-5 rough-border card-lift cursor-default ${
+                        item.accent ? "bg-kaixin text-white" : "bg-white"
+                      }`}
+                      style={{
+                        transform: `rotate(${item.rot}deg)`,
+                        boxShadow: item.accent ? "3px 3px 0 #CC5200" : undefined,
+                      }}
+                    >
+                      <p className={`text-[9px] font-mono tracking-[0.15em] uppercase mb-2 ${
+                        item.accent ? "opacity-50" : "text-foreground/25"
+                      }`}>
+                        {t(item.labelKey)}
+                      </p>
+                      <p className="text-[14px] font-medium leading-snug font-[family-name:var(--font-playfair)] italic">
+                        {t(item.textKey)}
+                      </p>
+                    </div>
+                  </Pop>
+                ))}
               </div>
             </div>
           </div>
+
+          <SquiggleLine className="absolute bottom-0 left-0" />
+          <ArrowDoodle className="absolute bottom-16 right-[8%] opacity-20 rotate-6" />
         </section>
 
         {/* ═══════════ TEAM ═══════════ */}
-        <section id="team" className="relative py-28 md:py-36">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-[0.03]" style={{ background: "radial-gradient(circle, rgba(255,102,0,0.3), transparent 70%)" }} />
-          </div>
-
-          <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
-            <FadeUp className="mb-16 text-center">
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-kaixin/10 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-kaixin" />
-                </div>
-                <span className="text-sm font-medium text-kaixin tracking-wider uppercase">
+        <section id="team" className="relative py-20 md:py-28 bg-secondary/50">
+          <div className="max-w-5xl mx-auto px-6">
+            <Reveal className="mb-14 text-center">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <StarDoodle />
+                <span className="text-[11px] font-mono uppercase tracking-widest text-foreground/40">
                   {t("team.stamp")}
                 </span>
+                <StarDoodle />
               </div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+              <h2 className="text-3xl md:text-[2.8rem] font-bold font-[family-name:var(--font-playfair)]">
                 {t("team.title")}
               </h2>
-            </FadeUp>
+            </Reveal>
 
             {/* Founder */}
-            <StaggerChild index={0} className="mb-8">
-              <div className="glass rounded-2xl p-8 md:p-10 max-w-2xl mx-auto text-center relative overflow-hidden">
-                <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 0%, rgba(255,102,0,0.06), transparent 60%)" }} />
-                <div className="relative">
-                  <div className="relative w-20 h-20 mx-auto mb-6">
-                    <div className="absolute inset-0 rounded-full bg-kaixin/20 animate-pulse-ring" />
-                    <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-kaixin to-kaixin-dark flex items-center justify-center shadow-lg shadow-kaixin/20">
-                      <span className="text-2xl font-bold text-white">YW</span>
+            <Pop className="mb-10">
+              <div
+                className="relative max-w-2xl mx-auto bg-white p-8 md:p-10 rough-border"
+                style={{ transform: "rotate(0.3deg)", boxShadow: "5px 5px 0 #1A1A1A" }}
+              >
+                <Tape color="mud" />
+                <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-10 mt-2">
+                  {/* Avatar */}
+                  <div className="relative flex-shrink-0">
+                    <div
+                      className="w-20 h-20 bg-kaixin flex items-center justify-center"
+                      style={{
+                        clipPath: "polygon(2% 0%, 100% 0%, 98% 100%, 0% 100%)",
+                      }}
+                    >
+                      <span className="text-3xl font-bold text-white font-[family-name:var(--font-playfair)] italic">
+                        YW
+                      </span>
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border-2 border-foreground shadow-sm" style={{ transform: "rotate(3deg)" }}>
+                      {t("team.founder.stamp")}
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold">
-                    {t("team.yovi.name")}
-                  </h3>
-                  <span className="inline-block mt-2 px-3 py-1 text-[10px] font-bold tracking-wider uppercase rounded-full bg-kaixin/10 text-kaixin border border-kaixin/15">
-                    {t("team.founder.stamp")}
-                  </span>
-                  <p className="mt-6 text-sm text-foreground/40 leading-relaxed max-w-md mx-auto">
-                    {t("team.yovi.desc")}
-                  </p>
-                  <div className="mt-6 flex justify-center gap-2">
-                    {["LinkedIn", "GitHub", "Twitter"].map((s) => (
-                      <button
-                        key={s}
-                        className="px-4 py-2 text-xs font-medium rounded-full glass glass-hover transition-all duration-300"
-                      >
-                        {s}
-                      </button>
-                    ))}
+                  {/* Info */}
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold font-[family-name:var(--font-playfair)]">
+                      {t("team.yovi.name")}
+                    </h3>
+                    <p className="mt-3 text-[13px] text-foreground/40 leading-relaxed">
+                      {t("team.yovi.desc")}
+                    </p>
+                    <div className="mt-5 flex gap-2">
+                      {["LinkedIn", "GitHub", "Twitter"].map((s) => (
+                        <button
+                          key={s}
+                          className="px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider border-2 border-foreground bg-white hover:bg-kaixin hover:text-white hover:border-kaixin transition-all duration-200"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-            </StaggerChild>
+            </Pop>
 
             {/* Team grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {otherTeam.map((member, i) => (
-                <StaggerChild key={member.initials} index={i + 1}>
-                  <div className="glass glass-hover rounded-2xl p-6 text-center group transition-all duration-500 hover:scale-[1.02]">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {team.map((member, i) => {
+                const rots = [-0.8, 0.5, -0.3, 0.7];
+                return (
+                  <Pop key={member.initials} delay={0.1 + i * 0.06}>
                     <div
-                      className={`w-12 h-12 mx-auto rounded-full bg-gradient-to-br ${member.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}
+                      className="bg-white p-5 text-center rough-border card-lift"
+                      style={{ transform: `rotate(${rots[i]}deg)` }}
                     >
-                      <span className="text-sm font-bold text-white">
+                      <div
+                        className="w-12 h-12 mx-auto mb-3 flex items-center justify-center text-white text-sm font-bold"
+                        style={{
+                          background: i === 0 ? "#E91E63" : i === 1 ? "#3F51B5" : i === 2 ? "#009688" : "#FF9800",
+                          borderRadius: i % 2 === 0 ? "30% 70% 70% 30% / 30% 30% 70% 70%" : "50% 20% 50% 20% / 20% 50% 20% 50%",
+                        }}
+                      >
                         {member.initials}
-                      </span>
+                      </div>
+                      <p className="text-[13px] font-bold">{t(member.nameKey)}</p>
+                      <p className="text-[10px] font-mono uppercase tracking-widest text-foreground/30 mt-1">
+                        {t(member.roleKey)}
+                      </p>
                     </div>
-                    <p className="text-sm font-semibold">{t(member.nameKey)}</p>
-                    <p className="text-[11px] text-foreground/30 mt-1 tracking-wider font-medium">
-                      {t(member.roleKey)}
-                    </p>
-                  </div>
-                </StaggerChild>
-              ))}
+                  </Pop>
+                );
+              })}
             </div>
           </div>
         </section>
 
         {/* ═══════════ CTA ═══════════ */}
-        <section className="relative py-24 md:py-32">
-          <OrangeBlob className="w-[600px] h-[600px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-
-          <div className="relative max-w-3xl mx-auto px-6 lg:px-8 text-center">
-            <FadeUp>
-              <h2 className="text-4xl md:text-6xl font-bold tracking-tight">
+        <section className="py-20 md:py-24">
+          <div className="max-w-3xl mx-auto px-6 text-center">
+            <Reveal>
+              <h2 className="text-3xl md:text-5xl font-bold font-[family-name:var(--font-playfair)] leading-tight">
                 {t("cta.title")}
               </h2>
-              <p className="mt-5 text-foreground/40 text-lg max-w-md mx-auto">
+              <p className="mt-4 text-foreground/35 text-[14px] max-w-sm mx-auto">
                 {t("cta.desc")}
               </p>
-              <div className="mt-10">
+              <div className="mt-8">
                 <a
                   href="#contact"
-                  className="inline-flex items-center gap-2.5 px-8 py-4 bg-kaixin hover:bg-kaixin-light text-white font-medium rounded-full transition-all duration-300 hover:shadow-[0_0_50px_rgba(255,102,0,0.35)] text-base"
+                  className="group inline-flex items-center gap-2 bg-kaixin text-white px-6 py-3 font-bold text-[13px] uppercase tracking-wider rough-border card-lift"
+                  style={{ boxShadow: "3px 3px 0 #CC5200" }}
                 >
                   {t("cta.btn")}
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </a>
               </div>
-            </FadeUp>
+            </Reveal>
           </div>
         </section>
 
         {/* ═══════════ CONTACT ═══════════ */}
-        <section id="contact" className="relative py-28 md:py-36">
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 30% 50%, rgba(255,102,0,0.04), transparent 50%)" }} />
+        <section id="contact" className="relative py-20 md:py-28 bg-foreground text-paper overflow-hidden">
+          <div className="absolute inset-0 opacity-8" style={{
+            backgroundImage: "radial-gradient(circle, #C4B99A 0.8px, transparent 0.8px)",
+            backgroundSize: "24px 24px",
+            opacity: 0.06,
+          }} />
 
-          <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-16 lg:gap-20">
+          <div className="relative max-w-5xl mx-auto px-6">
+            <div className="grid md:grid-cols-2 gap-12 md:gap-16">
               {/* Left */}
-              <FadeIn direction="left">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-kaixin/10 flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-kaixin" />
-                  </div>
-                  <span className="text-sm font-medium text-kaixin tracking-wider uppercase">
+              <Reveal>
+                <div className="flex items-center gap-3 mb-3">
+                  <StarDoodle className="!text-paper opacity-40" />
+                  <span className="text-[11px] font-mono uppercase tracking-widest text-paper/30">
                     {t("con.stamp")}
                   </span>
                 </div>
-                <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+                <h2 className="text-3xl md:text-[2.8rem] font-bold font-[family-name:var(--font-playfair)] text-paper">
                   {t("con.title")}
                 </h2>
-                <p className="mt-5 text-foreground/40 max-w-sm leading-relaxed">
+                <p className="mt-5 text-paper/35 text-[14px] max-w-sm leading-relaxed">
                   {t("con.desc")}
                 </p>
-
-                <div className="mt-10 space-y-4">
+                <div className="mt-8 space-y-3">
                   {[
-                    {
-                      icon: Mail,
-                      label: "hello@kaixin.tech",
-                    },
-                    {
-                      icon: MapPin,
-                      label: "Brondong, Lamongan, Jawa Timur 62263",
-                    },
-                  ].map((contact) => (
-                    <div
-                      key={contact.label}
-                      className="flex items-center gap-4 glass rounded-xl p-4 w-fit"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-kaixin/10 flex items-center justify-center">
-                        <contact.icon className="w-4 h-4 text-kaixin" />
+                    { icon: Mail, label: "hello@kaixin.tech" },
+                    { icon: MapPin, label: "Brondong, Lamongan, Jawa Timur 62263" },
+                  ].map((c) => (
+                    <div key={c.label} className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded border border-paper/20 flex items-center justify-center">
+                        <c.icon className="w-3.5 h-3.5 text-paper/40" />
                       </div>
-                      <span className="text-sm text-foreground/60">
-                        {contact.label}
-                      </span>
+                      <span className="text-[13px] text-paper/50">{c.label}</span>
                     </div>
                   ))}
                 </div>
-              </FadeIn>
+              </Reveal>
 
               {/* Right — Form */}
-              <FadeIn direction="right">
+              <Reveal delay={0.1}>
                 <form
                   onSubmit={handleSubmit}
-                  className="glass rounded-2xl p-6 md:p-8 space-y-5"
+                  className="bg-paper text-foreground p-6 md:p-8 relative"
+                  style={{
+                    transform: "rotate(-0.3deg)",
+                    boxShadow: "5px 5px 0 rgba(255,102,0,0.3)",
+                  }}
                 >
-                  <div className="grid sm:grid-cols-2 gap-4">
+                  <Tape color="orange" />
+                  <div className="space-y-4 mt-2">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-mono uppercase tracking-widest text-foreground/30 mb-1.5">
+                          {t("con.name")}
+                        </label>
+                        <Input
+                          name="name"
+                          placeholder={t("con.name.ph")}
+                          required
+                          className="h-11 bg-paper border-2 border-foreground/10 rounded-none text-[14px] focus:border-kaixin focus:ring-0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-mono uppercase tracking-widest text-foreground/30 mb-1.5">
+                          {t("con.email")}
+                        </label>
+                        <Input
+                          name="email"
+                          type="email"
+                          placeholder={t("con.email.ph")}
+                          required
+                          className="h-11 bg-paper border-2 border-foreground/10 rounded-none text-[14px] focus:border-kaixin focus:ring-0"
+                        />
+                      </div>
+                    </div>
                     <div>
-                      <label className="block text-xs font-medium text-foreground/30 mb-2 tracking-wider uppercase">
-                        {t("con.name")}
+                      <label className="block text-[10px] font-mono uppercase tracking-widest text-foreground/30 mb-1.5">
+                        {t("con.subject")}
                       </label>
                       <Input
-                        name="name"
-                        placeholder={t("con.name.ph")}
+                        name="subject"
+                        placeholder={t("con.subject.ph")}
                         required
-                        className="h-12 bg-white/5 border-white/10 rounded-xl text-sm placeholder:text-foreground/20 focus:border-kaixin/50 focus:ring-0 transition-colors"
+                        className="h-11 bg-paper border-2 border-foreground/10 rounded-none text-[14px] focus:border-kaixin focus:ring-0"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-foreground/30 mb-2 tracking-wider uppercase">
-                        {t("con.email")}
+                      <label className="block text-[10px] font-mono uppercase tracking-widest text-foreground/30 mb-1.5">
+                        {t("con.message")}
                       </label>
-                      <Input
-                        name="email"
-                        type="email"
-                        placeholder={t("con.email.ph")}
+                      <Textarea
+                        name="message"
+                        placeholder={t("con.message.ph")}
                         required
-                        className="h-12 bg-white/5 border-white/10 rounded-xl text-sm placeholder:text-foreground/20 focus:border-kaixin/50 focus:ring-0 transition-colors"
+                        rows={5}
+                        className="bg-paper border-2 border-foreground/10 rounded-none text-[14px] focus:border-kaixin focus:ring-0 resize-none"
                       />
                     </div>
+                    <Button
+                      type="submit"
+                      disabled={sending}
+                      className="h-11 px-7 bg-kaixin hover:bg-kaixin-dark text-white text-[12px] font-bold uppercase tracking-wider border-2 border-foreground rounded-none hover:shadow-[3px_3px_0_#CC5200] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all duration-200 gap-2"
+                    >
+                      {sending ? (
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <Send className="w-3.5 h-3.5" />
+                      )}
+                      {sending ? t("con.sending") : t("con.btn")}
+                    </Button>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-foreground/30 mb-2 tracking-wider uppercase">
-                      {t("con.subject")}
-                    </label>
-                    <Input
-                      name="subject"
-                      placeholder={t("con.subject.ph")}
-                      required
-                      className="h-12 bg-white/5 border-white/10 rounded-xl text-sm placeholder:text-foreground/20 focus:border-kaixin/50 focus:ring-0 transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-foreground/30 mb-2 tracking-wider uppercase">
-                      {t("con.message")}
-                    </label>
-                    <Textarea
-                      name="message"
-                      placeholder={t("con.message.ph")}
-                      required
-                      rows={5}
-                      className="bg-white/5 border-white/10 rounded-xl text-sm placeholder:text-foreground/20 focus:border-kaixin/50 focus:ring-0 transition-colors resize-none"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={sending}
-                    className="h-12 w-full sm:w-auto px-8 bg-kaixin hover:bg-kaixin-light text-white text-sm font-medium rounded-xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,102,0,0.3)] gap-2"
-                  >
-                    {sending ? (
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                    {sending ? t("con.sending") : t("con.btn")}
-                  </Button>
                 </form>
-              </FadeIn>
+              </Reveal>
             </div>
           </div>
         </section>
       </main>
 
       {/* ═══════════ FOOTER ═══════════ */}
-      <footer className="border-t border-border">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <Image
-              src="/logo-kaixin.png"
-              alt="Kaixin"
-              width={20}
-              height={20}
-              className="rounded-full opacity-70"
-            />
-            <span className="text-sm font-medium text-foreground/50">
+      <footer className="border-t-2 border-foreground">
+        <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Image src="/logo-kaixin.png" alt="" width={20} height={20} className="rounded-sm" />
+            <span className="font-[family-name:var(--font-playfair)] text-sm italic font-semibold">
               Kaixin
             </span>
           </div>
-          <p className="text-xs text-foreground/25">
+          <p className="text-[11px] text-foreground/30 font-mono">
             © {new Date().getFullYear()} — {t("ft.copy")}
           </p>
-          <div className="flex gap-5">
+          <div className="flex gap-4">
             {["Twitter", "GitHub", "LinkedIn"].map((s) => (
               <a
                 key={s}
                 href="#"
-                className="text-xs text-foreground/25 hover:text-kaixin transition-colors duration-300"
+                className="text-[11px] text-foreground/30 hover:text-kaixin transition-colors font-mono uppercase tracking-wider"
               >
                 {s}
               </a>
